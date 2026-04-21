@@ -4,74 +4,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
-    <title>Walkman Cloud Library - Ultimate Edition</title>
+    <title>Walkman Collection Cloud</title>
     <style>
-        /* GŁÓWNE STYLE */
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #e0e0e0; margin: 0; padding: 20px; }
-        .container { max-width: 1100px; margin: auto; background: #1e1e1e; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        h1 { text-align: center; color: #1db954; letter-spacing: 1px; }
-
-        /* KONFIGURACJA I WYSZUKIWANIE */
-        .panel { background: #282828; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #333; }
+        :root { --accent: #1db954; --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; }
+        h1 { text-align: center; color: var(--accent); }
+        
+        .panel { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
         .input-group { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-        input, select, button { padding: 12px; border-radius: 6px; border: 1px solid #333; background: #333; color: white; outline: none; }
-        input:focus { border-color: #1db954; }
-        button { background-color: #1db954; color: black; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }
-        button:hover { background-color: #1ed760; transform: translateY(-1px); }
-        .btn-search { background-color: #3498db; color: white; }
+        input, button { padding: 12px; border-radius: 6px; border: 1px solid #333; background: #282828; color: white; }
+        button { background: var(--accent); color: black; font-weight: bold; cursor: pointer; border: none; }
+        button:hover { opacity: 0.9; }
+        
+        #apiResults { display: flex; overflow-x: auto; gap: 15px; padding-bottom: 15px; margin-bottom: 20px; }
+        .result-card { min-width: 150px; background: var(--card); padding: 10px; border-radius: 8px; text-align: center; font-size: 11px; }
+        .result-card img { width: 100%; border-radius: 4px; }
 
-        /* WYNIKI Z API DISCOGS */
-        #apiResults { display: flex; overflow-x: auto; gap: 15px; padding-bottom: 15px; margin-bottom: 20px; scrollbar-width: thin; }
-        .result-card { min-width: 160px; background: #282828; padding: 10px; border-radius: 8px; text-align: center; font-size: 11px; border: 1px solid #383838; }
-        .result-card img { width: 100%; height: 140px; object-fit: cover; border-radius: 4px; margin-bottom: 8px; }
-        .result-card p { height: 35px; overflow: hidden; margin: 5px 0; }
-
-        /* TABELA KOLEKCJI */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { text-align: left; padding: 15px; background: #282828; color: #1db954; border-bottom: 2px solid #333; }
+        table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; }
+        th { background: #282828; color: var(--accent); padding: 15px; text-align: left; }
         td { padding: 12px; border-bottom: 1px solid #282828; }
-        .main-row { cursor: pointer; transition: background 0.3s; }
+        .main-row { cursor: pointer; }
         .main-row:hover { background: #252525; }
-        .album-cover-mini { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-
-        /* STATUSY */
-        .status-mam { color: #1db954; font-weight: bold; }
-        .status-szukam { color: #f1c40f; font-weight: bold; }
-        .status-mp3 { color: #3498db; font-weight: bold; }
-
-        /* SZCZEGÓŁY (ACCORDION) */
+        .album-cover-mini { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
+        
         .details-row { display: none; background: #181818; }
-        .details-content { padding: 25px; display: flex; gap: 30px; align-items: flex-start; border-left: 4px solid #1db954; }
-        .details-cover-big { width: 250px; height: 250px; object-fit: cover; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.6); }
-        .details-info { flex: 1; }
-        .tracklist-box { margin-top: 15px; background: #222; padding: 15px; border-radius: 8px; max-height: 300px; overflow-y: auto; }
-        .track-item { padding: 6px 0; border-bottom: 1px solid #333; font-size: 14px; color: #bbb; }
-        .track-item:last-child { border-bottom: none; }
-
-        /* ŁADOWANIE */
-        .loader { text-align: center; color: #1db954; padding: 20px; display: none; font-weight: bold; }
+        .details-content { padding: 20px; display: flex; gap: 20px; border-left: 4px solid var(--accent); }
+        .details-cover-big { width: 200px; height: 200px; object-fit: cover; border-radius: 8px; }
+        .tracklist { flex: 1; font-size: 14px; color: #bbb; max-height: 250px; overflow-y: auto; }
+        
+        .loader { text-align: center; padding: 20px; display: none; color: var(--accent); font-weight: bold; }
+        .status-mam { color: var(--accent); }
+        .status-szukam { color: #f1c40f; }
+        .status-mp3 { color: #3498db; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🎧 Walkman Cloud Library</h1>
+    <h1>🎧 Walkman Collection Cloud</h1>
 
     <div class="panel">
         <div class="input-group">
-            <input type="password" id="discogsToken" placeholder="Klucz API Discogs">
-            <button onclick="saveToken()">Zapisz Klucz</button>
-            <button style="background:#444; color:white;" onclick="loadFromSheets()">🔄 Odśwież Bazę</button>
-        </div>
-        <div class="input-group">
-            <input type="text" id="query" placeholder="Szukaj albumu w sieci (np. Metallica Master of Puppets)...">
-            <button class="btn-search" onclick="searchDiscogs()">Szukaj w Discogs 🔍</button>
+            <input type="password" id="discogsToken" placeholder="Token Discogs" style="flex:1">
+            <input type="text" id="query" placeholder="Szukaj albumu..." style="flex:2">
+            <button onclick="searchDiscogs()">Szukaj 🔍</button>
         </div>
     </div>
 
     <div id="apiResults"></div>
-
-    <div id="loader" class="loader">Trwa synchronizacja z chmurą...</div>
+    <div id="loader" class="loader">Synchronizacja...</div>
 
     <table id="collectionTable">
         <thead>
@@ -82,179 +64,93 @@
                 <th>Szczegóły</th>
             </tr>
         </thead>
-        <tbody id="collectionBody">
-            </tbody>
+        <tbody id="collectionBody"></tbody>
     </table>
 </div>
 
 <script>
-    // --- KONFIGURACJA ---
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz4JnEN2c4xOhJMKwQ8cXNdasCG3IjqXb02kFQeR-RVRcotmSfX_L5S27LcBCWBD3NimQ/exec';
-    
+    const GOOGLE_SCRIPT_URL = 'TWOJ_URL_WDROZENIA_TUTAJ';
     let myCollection = [];
 
-    // Inicjalizacja
-    document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('discogsToken').value = localStorage.getItem('discogsToken') || '';
-        loadFromSheets();
-    });
-
-    function saveToken() {
-        const token = document.getElementById('discogsToken').value;
-        localStorage.setItem('discogsToken', token);
-        alert("Token zapisany w przeglądarce!");
-    }
-
-    // --- LOGIKA GOOGLE SHEETS ---
     async function loadFromSheets() {
         const loader = document.getElementById('loader');
         loader.style.display = 'block';
         try {
-            const response = await fetch(GOOGLE_SCRIPT_URL, { redirect: 'follow' });
-            myCollection = await response.json();
+            const res = await fetch(GOOGLE_SCRIPT_URL, { redirect: 'follow' });
+            myCollection = await res.json();
             renderTable();
-        } catch (e) {
-            console.error("Błąd ładowania:", e);
-            alert("Błąd połączenia z Google Sheets. Sprawdź konsolę (F12).");
-        }
+        } catch (e) { console.error(e); }
         loader.style.display = 'none';
     }
 
-    async function addToSheets(fullTitle, cover, discogsId) {
-        const status = prompt("Podaj status (MAM / SZUKAM / MAM(mp3)):", "MAM");
-        if (!status) return;
-
-        const token = document.getElementById('discogsToken').value;
-        const loader = document.getElementById('loader');
-        loader.style.display = 'block';
-        loader.innerText = "Pobieranie tracklisty i zapisywanie...";
-
-        try {
-            // Pobieranie szczegółów albumu (tracklista) z Discogs
-            const trackRes = await fetch(`https://api.discogs.com/releases/${discogsId}?token=${token}`);
-            const trackData = await trackRes.json();
-            const tracks = trackData.tracklist ? trackData.tracklist.map(t => t.title).join(', ') : "Brak danych";
-
-            const parts = fullTitle.split(' - ');
-            const newEntry = {
-                Wykonawca: parts[0] || "Nieznany",
-                Album: parts[1] || "Nieznany",
-                Status: status,
-                Okładka: cover,
-                Utwory: tracks,
-                DiscogsID: discogsId
-            };
-
-            await fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify(newEntry),
-                redirect: 'follow'
-            });
-
-            await loadFromSheets(); // Odśwież listę po dodaniu
-            document.getElementById('apiResults').innerHTML = ''; // Wyczyść wyniki wyszukiwania
-        } catch (e) {
-            console.error("Błąd zapisu:", e);
-            alert("Nie udało się dodać albumu.");
-        }
-        loader.innerText = "Trwa synchronizacja z chmurą...";
-        loader.style.display = 'none';
-    }
-
-    // --- LOGIKA DISCOGS ---
     async function searchDiscogs() {
         const query = document.getElementById('query').value;
         const token = document.getElementById('discogsToken').value;
-
-        if (!token) return alert("Wpisz swój token Discogs!");
-        if (!query) return alert("Wpisz nazwę artysty lub albumu!");
-
-        const url = `https://api.discogs.com/database/search?q=${encodeURIComponent(query)}&type=release&token=${token}&per_page=6`;
-        
-        try {
-            const res = await fetch(url);
-            const data = await res.json();
-            displayApiResults(data.results);
-        } catch (e) {
-            alert("Błąd wyszukiwania w Discogs.");
-        }
-    }
-
-    function displayApiResults(results) {
+        localStorage.setItem('discogsToken', token);
+        const res = await fetch(`https://api.discogs.com/database/search?q=${encodeURIComponent(query)}&type=release&token=${token}&per_page=6`);
+        const data = await res.json();
         const container = document.getElementById('apiResults');
-        container.innerHTML = '';
-        results.forEach(res => {
-            const div = document.createElement('div');
-            div.className = 'result-card';
-            div.innerHTML = `
-                <img src="${res.cover_image || 'https://via.placeholder.com/150'}">
+        container.innerHTML = data.results.map(res => `
+            <div class="result-card">
+                <img src="${res.cover_image}">
                 <p><strong>${res.title}</strong></p>
-                <button onclick="addToSheets('${res.title.replace(/'/g, "\\'")}', '${res.cover_image}', '${res.id}')">Dodaj do bazy</button>
-            `;
-            container.appendChild(div);
-        });
+                <button onclick="addAlbum('${res.title.replace(/'/g,"")}', '${res.cover_image}', '${res.id}')">DODAJ +</button>
+            </div>
+        `).join('');
     }
 
-    // --- RENDEROWANIE TABELI ---
+    async function addAlbum(title, cover, id) {
+        const status = prompt("Status (MAM / SZUKAM / MP3):", "MAM");
+        if(!status) return;
+        
+        const token = document.getElementById('discogsToken').value;
+        const trackRes = await fetch(`https://api.discogs.com/releases/${id}?token=${token}`);
+        const trackData = await trackRes.json();
+        const tracks = trackData.tracklist ? trackData.tracklist.map(t => t.title).join(', ') : "";
+
+        const parts = title.split(' - ');
+        const entry = { Wykonawca: parts[0], Album: parts[1], Status: status, Okładka: cover, Utwory: tracks, DiscogsID: id };
+
+        await fetch(https://script.google.com/macros/s/AKfycbz4JnEN2c4xOhJMKwQ8cXNdasCG3IjqXb02kFQeR-RVRcotmSfX_L5S27LcBCWBD3NimQ/exec, { method: 'POST', mode: 'no-cors', body: JSON.stringify(entry) });
+        setTimeout(loadFromSheets, 1500);
+    }
+
     function renderTable() {
         const body = document.getElementById('collectionBody');
-        body.innerHTML = '';
-
-        myCollection.forEach((item, index) => {
-            if (!item.Wykonawca && !item.artist) return; // Pomiń puste
-
-            const artist = item.Wykonawca || item.artist;
-            const album = item.Album || item.album;
-            const cover = item.Okładka || item.cover || 'https://via.placeholder.com/150';
-            const status = item.Status || item.status;
-            const tracksRaw = item.Utwory || item.tracks || "";
-            
-            const trackList = tracksRaw.split(',').map((t, i) => `<div class="track-item">${i+1}. ${t.trim()}</div>`).join('');
-
-            // Wiersz główny
-            const mainRow = `
-                <tr class="main-row" onclick="toggleDetails(${index})">
-                    <td><img src="${cover}" class="album-cover-mini"></td>
-                    <td><strong>${artist}</strong><br>${album}</td>
-                    <td class="status-${String(status).toLowerCase().replace(/[()]/g, '')}">${status}</td>
-                    <td><button style="background:#444; color:white; font-size:10px;">POKAŻ ▾</button></td>
+        body.innerHTML = myCollection.map((item, i) => {
+            const statusClass = `status-${String(item.Status || '').toLowerCase().replace(/[()]/g, '')}`;
+            const tracks = (item.Utwory || '').split(',').map((t, idx) => `<div>${idx+1}. ${t}</div>`).join('');
+            return `
+                <tr class="main-row" onclick="toggle(${i})">
+                    <td><img src="${item.Okładka}" class="album-cover-mini"></td>
+                    <td><strong>${item.Wykonawca}</strong><br>${item.Album}</td>
+                    <td class="${statusClass}">${item.Status}</td>
+                    <td>▾</td>
                 </tr>
-            `;
-
-            // Wiersz szczegółów
-            const detailsRow = `
-                <tr id="details-${index}" class="details-row">
+                <tr id="details-${i}" class="details-row">
                     <td colspan="4">
                         <div class="details-content">
-                            <img src="${cover}" class="details-cover-big" onerror="this.src='https://via.placeholder.com/250?text=Brak+Okładki'">
+                            <img src="${item.Okładka}" class="details-cover-big">
                             <div class="details-info">
-                                <h2>${album}</h2>
-                                <p><strong>Artysta:</strong> ${artist}</p>
-                                <div class="tracklist-box">
-                                    <strong>Lista utworów:</strong><br>
-                                    ${trackList || "Brak listy utworów"}
-                                </div>
-                                <p style="margin-top:15px; font-size:11px; color:#666;">Discogs ID: ${item.DiscogsID || 'Niezapisane'}</p>
+                                <h3>${item.Album}</h3>
+                                <div class="tracklist"><strong>Tracklista:</strong><br>${tracks}</div>
                             </div>
                         </div>
                     </td>
                 </tr>
             `;
-            body.innerHTML += mainRow + detailsRow;
-        });
+        }).join('');
     }
 
-    function toggleDetails(index) {
-        const row = document.getElementById(`details-${index}`);
-        const isVisible = row.style.display === 'table-row';
-        
-        // Zamykamy inne otwarte wiersze dla porządku
+    function toggle(i) {
+        const el = document.getElementById(`details-${i}`);
+        const current = el.style.display;
         document.querySelectorAll('.details-row').forEach(r => r.style.display = 'none');
-        
-        // Przełączamy obecny
-        row.style.display = isVisible ? 'none' : 'table-row';
+        el.style.display = current === 'table-row' ? 'none' : 'table-row';
     }
-</script>
 
+    document.getElementById('discogsToken').value = localStorage.getItem('discogsToken') || '';
+    loadFromSheets();
+</script>
 </body>
 </html>
