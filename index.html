@@ -83,4 +83,174 @@
     // ==========================================
 
     let myCollection = [];
-    let currentSort =
+    let currentSort = { key: '', asc: true };
+
+    // ŁADOWANIE Z ARKUSZA
+    async function loadFromSheets() {
+        document.getElementById('loader').style.display = 'block';
+        try {
+            const res = await fetch(GOOGLE_SCRIPT_URL, { redirect: 'follow' });
+            myCollection = await res.json();
+            renderTable();
+        } catch (e) { 
+            console.error(e);
+            alert("Błąd połączenia z bazą Google Sheets.");
+        }
+        document.getElementById('loader').style.display = 'none';
+    }
+
+    // SORTOWANIE
+    function sortCollection(key) {
+        if (currentSort.key === key) {
+            currentSort.asc = !currentSort.asc;
+        } else {
+            currentSort.key = key;
+            currentSort.asc = true;
+        }
+        
+        myCollection.sort((a, b) => {
+            let valA = (a[key] || "").toLowerCase();
+            let valB = (b[key] || "").toLowerCase();
+            if (valA < valB) return currentSort.asc ? -1 : 1;
+            if (valA > valB) return currentSort.asc ? 1 : -1;
+            return 0;
+        });
+        renderTable();
+    }
+
+    // USUWANIE
+    async function deleteAlbum(artist, album) {
+        if (!confirm(`Czy na pewno usunąć: ${artist} - ${album}?`)) return;
+        
+        document.getElementById('loader').style.display = 'block';
+        const payload = { action: "DELETE", Wykonawca: artist, Album: album };
+        
+        try {
+            await fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(payload)
+            });
+            setTimeout(loadFromSheets, 1500); // Odśwież po usunięciu
+        } catch(e) {
+            alert("Nie udało się usunąć z bazy.");
+            document.getElementById('loader').style.display = 'none';
+        }
+    }
+
+    // SZUKANIE W DISCOGS
+    async function searchDiscogs() {
+        const query = document.getElementById('query').value;
+        if (!query) return alert("Wpisz czego szukasz!");
+        if (!DISCOGS_TOKEN || DISCOGS_TOKEN.includes('TWOJ_TOKEN')) return alert("Musisz najpierw uzupełnić klucz DISCOGS_TOKEN w kodzie!");
+
+        document.getElementById('loader').style.display = 'block';
+        document.getElementById('loader').innerText = "Szukanie w Discogs...";
+
+        try {
+            const res = await fetch(`https://api.discogs.com/database/search?q=${encodeURIComponent(query)}&type=release&token=${DISCOGS_TOKEN}&per_page=6`);
+            const data = await res.json();
+            
+            document.getElementById('apiResults').innerHTML = data.results.map(r => `
+                <div class="result-card">
+                    <img src="${r.cover_image || 'https://via.placeholder.com/150'}">
+                    <p>${r.title}</p>
+                    <button onclick="addAlbum('${r.title.replace(/'/g,"\\'")}', '${r.cover_image}', '${r.id}')">DODAJ +</button>
+                </div>
+            `).join('');
+        } catch(e) {
+            alert("Błąd połączenia z Discogs API.");
+        }
+        
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('loader').innerText = "Synchronizacja z chmurą...";
+    }
+
+    // DODAWANIE DO BAZY
+    async function addAlbum(title, cover, id) {
+        const status = prompt("Wybierz status (np. MAM, SZUKAM, MAM mp3):", "MAM");
+        if(!status) return;
+
+        document.getElementById('loader').style.display = 'block';
+        
+        try {
+            // Pobieranie tracklisty
+            const trackRes = await fetch(`https://api.discogs.com/releases/${id}?token=${DISCOGS_TOKEN}`);
+            const trackData = await trackRes.json();
+            const tracks = trackData.tracklist ? trackData.tracklist.map(t => t.title).join(', ') : "Brak danych";
+            
+            const parts = title.split(' - ');
+            const entry = { 
+                Wykonawca: parts[0] || "Nieznany", 
+                Album: parts[1] || "Nieznany", 
+                Status: status, 
+                Okładka: cover, 
+                Utwory: tracks, 
+                DiscogsID: id 
+            };
+
+            await fetch(GOOGLE_SCRIPT_URL, { 
+                method: 'POST', 
+                mode: 'no-cors', 
+                body: JSON.stringify(entry) 
+            });
+            
+            // Czyszczenie wyników szukania i odświeżanie
+            document.getElementById('apiResults').innerHTML = '';
+            document.getElementById('query').value = '';
+            setTimeout(loadFromSheets, 1500);
+
+        } catch(e) {
+            alert("Błąd podczas dodawania.");
+            document.getElementById('loader').style.display = 'none';
+        }
+    }
+
+    // RENDEROWANIE INTERFEJSU
+    function renderTable() {
+        const body = document.getElementById('collectionBody');
+        body.innerHTML = myCollection.map((item, i) => {
+            if(!item.Wykonawca) return ''; // Pomiń puste
+            
+            const statusClass = `status-${String(item.Status || '').toLowerCase().replace(/[()]/g, '').trim()}`;
+            const tracks = (item.Utwory || '').split(',').map((t, idx) => `<div style="padding:4px 0; border-bottom:1px solid #333;">${idx+1}. ${t}</div>`).join('');
+            
+            return `
+                <tr class="main-row" onclick="toggle(${i})">
+                    <td><img src="${item.Okładka || 'https://via.placeholder.com/150'}" class="album-cover-mini"></td>
+                    <td><strong>${item.Wykonawca}</strong></td>
+                    <td>${item.Album}</td>
+                    <td class="${statusClass}">${item.Status}</td>
+                </tr>
+                <tr id="details-${i}" class="details-row">
+                    <td colspan="4">
+                        <div class="details-content">
+                            <img src="${item.Okładka || 'https://via.placeholder.com/220'}" class="details-cover-big">
+                            <div style="flex:1;">
+                                <h2 style="margin:0 0 15px 0; color:var(--accent)">${item.Album}</h2>
+                                <div class="tracklist">
+                                    <strong>Tracklista:</strong><br>
+                                    ${tracks || "Brak listy utworów"}
+                                </div>
+                                <button class="btn-delete" onclick="deleteAlbum('${item.Wykonawca.replace(/'/g,"\\'")}', '${item.Album.replace(/'/g,"\\'")}')">USUŃ Z KOLEKCJI 🗑️</button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // POKAZYWANIE/UKRYWANIE SZCZEGÓŁÓW
+    function toggle(i) {
+        const el = document.getElementById(`details-${i}`);
+        const isVisible = el.style.display === 'table-row';
+        document.querySelectorAll('.details-row').forEach(r => r.style.display = 'none');
+        el.style.display = isVisible ? 'none' : 'table-row';
+    }
+
+    // START
+    loadFromSheets();
+</script>
+</body>
+</html>
