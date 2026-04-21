@@ -4,39 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
-    <title>Walkman Collection Cloud</title>
+    <title>Walkman Cloud V5 - Final Edition</title>
     <style>
-        :root { --accent: #1db954; --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        :root { --accent: #1db954; --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --danger: #e74c3c; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
         .container { max-width: 1000px; margin: auto; }
-        h1 { text-align: center; color: var(--accent); }
+        h1 { text-align: center; color: var(--accent); letter-spacing: 1px; }
         
         .panel { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
-        .input-group { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-        input, button { padding: 12px; border-radius: 6px; border: 1px solid #333; background: #282828; color: white; }
-        button { background: var(--accent); color: black; font-weight: bold; cursor: pointer; border: none; }
-        button:hover { opacity: 0.9; }
+        .input-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        input, button { padding: 12px; border-radius: 6px; border: 1px solid #333; background: #282828; color: white; outline: none; }
+        input:focus { border-color: var(--accent); }
+        button { background: var(--accent); color: black; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
         
-        #apiResults { display: flex; overflow-x: auto; gap: 15px; padding-bottom: 15px; margin-bottom: 20px; }
-        .result-card { min-width: 150px; background: var(--card); padding: 10px; border-radius: 8px; text-align: center; font-size: 11px; }
-        .result-card img { width: 100%; border-radius: 4px; }
-
+        #apiResults { display: flex; overflow-x: auto; gap: 10px; margin-bottom: 20px; padding-bottom: 10px; scrollbar-width: thin; }
+        .result-card { min-width: 140px; background: var(--card); padding: 10px; border-radius: 8px; text-align: center; font-size: 11px; border: 1px solid #333; }
+        .result-card img { width: 100%; height: 130px; object-fit: cover; border-radius: 4px; margin-bottom: 5px; }
+        .result-card p { height: 30px; overflow: hidden; margin: 5px 0; }
+        
         table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; }
-        th { background: #282828; color: var(--accent); padding: 15px; text-align: left; }
+        th { background: #282828; color: var(--accent); padding: 15px; text-align: left; cursor: pointer; user-select: none; border-bottom: 2px solid #333; }
+        th:hover { background: #333; }
         td { padding: 12px; border-bottom: 1px solid #282828; }
-        .main-row { cursor: pointer; }
+        
+        .main-row { cursor: pointer; transition: background 0.2s; }
         .main-row:hover { background: #252525; }
-        .album-cover-mini { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
+        .album-cover-mini { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         
         .details-row { display: none; background: #181818; }
-        .details-content { padding: 20px; display: flex; gap: 20px; border-left: 4px solid var(--accent); }
-        .details-cover-big { width: 200px; height: 200px; object-fit: cover; border-radius: 8px; }
-        .tracklist { flex: 1; font-size: 14px; color: #bbb; max-height: 250px; overflow-y: auto; }
+        .details-content { padding: 20px; display: flex; gap: 25px; border-left: 4px solid var(--accent); }
+        .details-cover-big { width: 220px; height: 220px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
         
+        .tracklist { flex: 1; font-size: 14px; color: #bbb; max-height: 250px; overflow-y: auto; }
+        .btn-delete { background: var(--danger); color: white; margin-top: 15px; padding: 8px 15px; font-size: 12px; }
         .loader { text-align: center; padding: 20px; display: none; color: var(--accent); font-weight: bold; }
-        .status-mam { color: var(--accent); }
-        .status-szukam { color: #f1c40f; }
-        .status-mp3 { color: #3498db; }
+        
+        .status-mam { color: var(--accent); font-weight: bold; }
+        .status-szukam { color: #f1c40f; font-weight: bold; }
+        .status-mp3 { color: #3498db; font-weight: bold; }
+        .sort-icon { font-size: 10px; margin-left: 5px; opacity: 0.5; }
     </style>
 </head>
 <body>
@@ -46,22 +53,21 @@
 
     <div class="panel">
         <div class="input-group">
-            <input type="password" id="discogsToken" placeholder="Token Discogs" style="flex:1">
-            <input type="text" id="query" placeholder="Szukaj albumu..." style="flex:2">
-            <button onclick="searchDiscogs()">Szukaj 🔍</button>
+            <input type="text" id="query" placeholder="Szukaj wykonawcy lub albumu (np. Dire Straits)..." style="flex:1" onkeypress="if(event.key === 'Enter') searchDiscogs()">
+            <button onclick="searchDiscogs()">Szukaj w Discogs 🔍</button>
         </div>
     </div>
 
     <div id="apiResults"></div>
-    <div id="loader" class="loader">Synchronizacja...</div>
+    <div id="loader" class="loader">Synchronizacja z chmurą...</div>
 
-    <table id="collectionTable">
+    <table>
         <thead>
             <tr>
                 <th>Okładka</th>
-                <th>Wykonawca / Album</th>
-                <th>Status</th>
-                <th>Szczegóły</th>
+                <th onclick="sortCollection('Wykonawca')">Wykonawca <span class="sort-icon">↕</span></th>
+                <th onclick="sortCollection('Album')">Album <span class="sort-icon">↕</span></th>
+                <th onclick="sortCollection('Status')">Status <span class="sort-icon">↕</span></th>
             </tr>
         </thead>
         <tbody id="collectionBody"></tbody>
@@ -69,88 +75,12 @@
 </div>
 
 <script>
-    const GOOGLE_SCRIPT_URL = 'TWOJ_URL_WDROZENIA_TUTAJ';
+    // ==========================================
+    // TUTAJ WKLEJ SWOJE DANE
+    // ==========================================
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz4JnEN2c4xOhJMKwQ8cXNdasCG3IjqXb02kFQeR-RVRcotmSfX_L5S27LcBCWBD3NimQ/exec';
+    const DISCOGS_TOKEN = 'seIzjqdJrlKLDTmydSZSALggtMsgAzGAOfNXzMzt';
+    // ==========================================
+
     let myCollection = [];
-
-    async function loadFromSheets() {
-        const loader = document.getElementById('loader');
-        loader.style.display = 'block';
-        try {
-            const res = await fetch(GOOGLE_SCRIPT_URL, { redirect: 'follow' });
-            myCollection = await res.json();
-            renderTable();
-        } catch (e) { console.error(e); }
-        loader.style.display = 'none';
-    }
-
-    async function searchDiscogs() {
-        const query = document.getElementById('query').value;
-        const token = document.getElementById('discogsToken').value;
-        localStorage.setItem('discogsToken', token);
-        const res = await fetch(`https://api.discogs.com/database/search?q=${encodeURIComponent(query)}&type=release&token=${token}&per_page=6`);
-        const data = await res.json();
-        const container = document.getElementById('apiResults');
-        container.innerHTML = data.results.map(res => `
-            <div class="result-card">
-                <img src="${res.cover_image}">
-                <p><strong>${res.title}</strong></p>
-                <button onclick="addAlbum('${res.title.replace(/'/g,"")}', '${res.cover_image}', '${res.id}')">DODAJ +</button>
-            </div>
-        `).join('');
-    }
-
-    async function addAlbum(title, cover, id) {
-        const status = prompt("Status (MAM / SZUKAM / MP3):", "MAM");
-        if(!status) return;
-        
-        const token = document.getElementById('discogsToken').value;
-        const trackRes = await fetch(`https://api.discogs.com/releases/${id}?token=${token}`);
-        const trackData = await trackRes.json();
-        const tracks = trackData.tracklist ? trackData.tracklist.map(t => t.title).join(', ') : "";
-
-        const parts = title.split(' - ');
-        const entry = { Wykonawca: parts[0], Album: parts[1], Status: status, Okładka: cover, Utwory: tracks, DiscogsID: id };
-
-        await fetch(https://script.google.com/macros/s/AKfycbz4JnEN2c4xOhJMKwQ8cXNdasCG3IjqXb02kFQeR-RVRcotmSfX_L5S27LcBCWBD3NimQ/exec, { method: 'POST', mode: 'no-cors', body: JSON.stringify(entry) });
-        setTimeout(loadFromSheets, 1500);
-    }
-
-    function renderTable() {
-        const body = document.getElementById('collectionBody');
-        body.innerHTML = myCollection.map((item, i) => {
-            const statusClass = `status-${String(item.Status || '').toLowerCase().replace(/[()]/g, '')}`;
-            const tracks = (item.Utwory || '').split(',').map((t, idx) => `<div>${idx+1}. ${t}</div>`).join('');
-            return `
-                <tr class="main-row" onclick="toggle(${i})">
-                    <td><img src="${item.Okładka}" class="album-cover-mini"></td>
-                    <td><strong>${item.Wykonawca}</strong><br>${item.Album}</td>
-                    <td class="${statusClass}">${item.Status}</td>
-                    <td>▾</td>
-                </tr>
-                <tr id="details-${i}" class="details-row">
-                    <td colspan="4">
-                        <div class="details-content">
-                            <img src="${item.Okładka}" class="details-cover-big">
-                            <div class="details-info">
-                                <h3>${item.Album}</h3>
-                                <div class="tracklist"><strong>Tracklista:</strong><br>${tracks}</div>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-    }
-
-    function toggle(i) {
-        const el = document.getElementById(`details-${i}`);
-        const current = el.style.display;
-        document.querySelectorAll('.details-row').forEach(r => r.style.display = 'none');
-        el.style.display = current === 'table-row' ? 'none' : 'table-row';
-    }
-
-    document.getElementById('discogsToken').value = localStorage.getItem('discogsToken') || '';
-    loadFromSheets();
-</script>
-</body>
-</html>
+    let currentSort =
