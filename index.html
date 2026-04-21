@@ -10,386 +10,282 @@
     <meta name="apple-mobile-web-app-title" content="Walkman">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Walkman_logo.svg/512px-Walkman_logo.svg.png">
     
-    <title>Walkman Cloud - Grid Edition</title>
+    <title>Walkman Cloud V11</title>
     <style>
         :root { --accent: #1db954; --bg: #000000; --card: #121212; --text: #ffffff; --text-dim: #b3b3b3; --danger: #e74c3c; --hires: #9b59b6; --edit: #3498db; }
-        
         *, *::before, *::after { box-sizing: border-box; }
-        
-        html, body { 
-            overflow-x: hidden; width: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            background: var(--bg); color: var(--text); padding: 0; margin: 0; -webkit-tap-highlight-color: transparent;
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-
+        body { overflow-x: hidden; width: 100%; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); padding: 0; margin: 0; padding-bottom: env(safe-area-inset-bottom); }
         .container { max-width: 800px; margin: 0 auto; width: 100%; padding: 15px; display: flex; flex-direction: column; gap: 15px; }
         
-        h1 { text-align: center; color: var(--accent); font-size: 20px; margin: 10px 0; font-weight: 700; }
-        
-        /* LICZNIKI */
-        .counters { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 5px; }
-        .counter-box { background: #1a1a1a; padding: 15px; border-radius: 12px; flex: 1; text-align: center; border: 1px solid #333; }
-        .counter-value { font-size: 24px; font-weight: 900; color: var(--accent); display: block; margin-top: 5px; }
-        .counter-box.szukam .counter-value { color: #f1c40f; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        h1 { color: var(--accent); font-size: 20px; margin: 0; font-weight: 700; }
+        .icon-btn { background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px; }
 
-        .panel { background: var(--card); padding: 15px; border-radius: 12px; width: 100%; }
-        .panel-title { font-size: 11px; text-transform: uppercase; color: var(--text-dim); margin-top: 0; margin-bottom: 12px; font-weight: 600; letter-spacing: 1px;}
-        
+        .counters { display: flex; gap: 10px; }
+        .counter-box { background: #1a1a1a; padding: 12px; border-radius: 12px; flex: 1; text-align: center; border: 1px solid #333; }
+        .counter-value { font-size: 22px; font-weight: 900; color: var(--accent); display: block; }
+        .szukam .counter-value { color: #f1c40f; }
+
+        .panel { background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid #333; }
         .input-group { display: flex; gap: 8px; width: 100%; flex-wrap: wrap; }
-        input, button, select, textarea { padding: 14px; border-radius: 8px; border: none; background: #282828; color: white; font-size: 16px; width: 100%; outline: none; -webkit-appearance: none; }
-        button { background: var(--accent); color: #000; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:active { transform: scale(0.95); opacity: 0.8; }
-        
-        /* WYNIKI DISCOGS */
-        #apiResults { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; margin-top: 10px; }
-        .result-card { background: #1a1a1a; padding: 10px; border-radius: 10px; display: flex; flex-direction: column; gap: 6px; }
-        .result-card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 6px; }
-        .result-card p { font-size: 12px; font-weight: 600; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .result-card select { padding: 8px; font-size: 13px; background: #282828; }
-        .result-card button { padding: 10px; font-size: 13px; }
+        input, button, select, textarea { padding: 14px; border-radius: 8px; border: none; background: #282828; color: white; font-size: 16px; width: 100%; outline: none; }
+        button { background: var(--accent); color: #000; font-weight: bold; cursor: pointer; }
 
-        /* GRID TWOJEJ KOLEKCJI (SAME OKŁADKI) */
-        .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; margin-top: 10px; }
-        .grid-item { position: relative; border-radius: 10px; overflow: hidden; aspect-ratio: 1/1; cursor: pointer; background: #1a1a1a; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        .grid-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
-        .grid-item:active img { transform: scale(0.95); }
+        /* GRID Z EFEKTEM FADE-IN */
+        .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px; }
+        .grid-item { position: relative; border-radius: 10px; overflow: hidden; aspect-ratio: 1/1; background: #1a1a1a; animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .grid-item img { width: 100%; height: 100%; object-fit: cover; }
+        .grid-overlay { position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.8); padding: 5px 8px; }
+        .grid-title { font-size: 10px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        /* Cienki pasek z podpisem pod okładką na siatce */
-        .grid-overlay { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.85); padding: 6px 8px; backdrop-filter: blur(5px); }
-        .grid-title { font-size: 11px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .grid-subtitle { font-size: 10px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .format-badge { position: absolute; top: 6px; right: 6px; background: var(--accent); color: #000; font-size: 9px; font-weight: bold; padding: 3px 6px; border-radius: 10px; z-index: 2; }
-        .format-badge.szukam { background: #f1c40f; }
-        .format-badge.hires { background: var(--hires); color: white; }
-        .format-badge.mp3 { background: #3498db; color: white; }
+        .format-badge { position: absolute; top: 5px; right: 5px; background: var(--accent); color: #000; font-size: 8px; font-weight: bold; padding: 2px 6px; border-radius: 10px; }
 
-        /* MODALE (Szczegóły i Edycja) */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 9999; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(10px); }
-        .modal-content { background: var(--card); padding: 20px; border-radius: 16px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; }
+        /* MODALE */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(5px); }
+        .modal-content { background: var(--card); padding: 20px; border-radius: 16px; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto; }
+        .detail-cover { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 12px; margin-bottom: 15px; }
+        .detail-notes { font-style: italic; color: #888; font-size: 13px; text-align: center; margin-bottom: 15px; }
         
-        /* Modal Szczegółów */
-        .detail-cover { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-        .detail-artist { font-size: 16px; color: var(--text-dim); text-align: center; margin: 0; }
-        .detail-album { font-size: 24px; font-weight: 800; text-align: center; margin: 5px 0 15px 0; color: white; }
-        .detail-tags { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
-        .tag { font-size: 12px; font-weight: bold; padding: 5px 12px; border-radius: 20px; background: #282828; }
-        .detail-tracks { background: #000; padding: 15px; border-radius: 12px; font-size: 13px; color: #ccc; max-height: 200px; overflow-y: auto; margin-bottom: 20px; }
+        .loader { text-align: center; color: var(--accent); font-weight: bold; display: none; }
         
-        .modal-buttons { display: flex; gap: 10px; margin-top: 10px; }
-        .btn-close { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.5); width: 30px; height: 30px; border-radius: 15px; display: flex; justify-content: center; align-items: center; padding: 0; color: white; font-size: 16px; z-index: 10; }
-        
-        .modal-content label { display: block; font-size: 11px; color: var(--text-dim); margin: 10px 0 5px 5px; text-transform: uppercase; }
-        .modal-content textarea { height: 80px; resize: none; font-family: inherit; }
-
-        .loader { text-align: center; padding: 20px; font-weight: bold; color: var(--accent); display: none; }
-
-        /* Responsywność */
-        @media (min-width: 600px) {
-            .input-group { flex-wrap: nowrap; }
-            .grid-container { grid-template-columns: repeat(4, 1fr); }
-        }
-        @media (max-width: 599px) {
-            .input-group select { width: 48%; flex-grow: 1; }
-            .input-group input { width: 100%; }
-        }
+        @media (min-width: 600px) { .grid-container { grid-template-columns: repeat(4, 1fr); } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Walkman Cloud</h1>
+    <div class="header">
+        <h1>Walkman Cloud</h1>
+        <div>
+            <button class="icon-btn" onclick="exportToCSV()">💾</button>
+            <button class="icon-btn" onclick="openSettings()">⚙️</button>
+        </div>
+    </div>
 
     <div class="counters">
-        <div class="counter-box">
-            <div style="font-size:11px; color:#888; font-weight:bold;">KOLEKCJA</div>
-            <span class="counter-value" id="countMam">0</span>
-        </div>
-        <div class="counter-box szukam">
-            <div style="font-size:11px; color:#888; font-weight:bold;">POSZUKIWANE</div>
-            <span class="counter-value" id="countSzukam">0</span>
-        </div>
+        <div class="counter-box"><small>KOLEKCJA</small><span class="counter-value" id="countMam">0</span></div>
+        <div class="counter-box szukam"><small>SZUKAM</small><span class="counter-value" id="countSzukam">0</span></div>
     </div>
 
     <div class="panel">
-        <h3 class="panel-title">🌐 Dodaj z Discogs</h3>
         <div class="input-group">
-            <input type="text" id="query" placeholder="Artysta lub album..." onkeypress="if(event.key === 'Enter') searchDiscogs()">
-            <button onclick="searchDiscogs()" style="width: 100px;">Szukaj</button>
+            <input type="text" id="query" placeholder="Szukaj w Discogs..." onkeypress="if(event.key === 'Enter') searchDiscogs()">
+            <button onclick="searchDiscogs()" style="width:80px">Szukaj</button>
         </div>
-        <div id="apiResults"></div>
+        <div id="apiResults" class="grid-container" style="grid-template-columns: repeat(2, 1fr); margin-top:15px;"></div>
     </div>
     
-    <div id="loader" class="loader">Wczytywanie bazy...</div>
+    <div id="loader" class="loader">Synchronizacja...</div>
 
-    <div class="panel" style="padding-bottom: 20px;">
-        <h3 class="panel-title" style="color: var(--accent);">📁 Przeszukaj zbiory</h3>
-        
+    <div class="panel">
         <div class="input-group">
-            <input type="text" id="localSearch" placeholder="Wpisz nazwę..." onkeyup="renderGrid()">
+            <input type="text" id="localSearch" placeholder="Szukaj w kolekcji..." onkeyup="renderGrid()">
             <select id="statusFilter" onchange="renderGrid()">
-                <option value="ALL">Wszystkie Statusy</option>
-                <option value="MAM">Tylko MAM</option>
-                <option value="SZUKAM">Tylko SZUKAM</option>
-            </select>
-            <select id="formatFilter" onchange="renderGrid()">
-                <option value="ALL">Wszystkie Formaty</option>
-                <option value="FLAC">FLAC</option>
-                <option value="FLAC Hi-Res">FLAC Hi-Res</option>
-                <option value="MP3">MP3</option>
+                <option value="ALL">Statusy</option>
+                <option value="MAM">MAM</option>
+                <option value="SZUKAM">SZUKAM</option>
             </select>
         </div>
-
         <div class="grid-container" id="collectionGrid"></div>
+    </div>
+</div>
+
+<div id="settingsModal" class="modal">
+    <div class="modal-content">
+        <h2>Ustawienia API</h2>
+        <p style="font-size:12px; color:#888;">Dane zapisane tylko lokalnie w tym telefonie.</p>
+        <label>Google Script URL</label>
+        <input type="text" id="setGoogleURL" placeholder="https://script.google.com/...">
+        <label>Discogs Token</label>
+        <input type="password" id="setDiscogsToken">
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button onclick="closeSettings()" style="background:#444; flex:1">Zamknij</button>
+            <button onclick="saveSettings()" style="flex:1">Zapisz</button>
+        </div>
     </div>
 </div>
 
 <div id="detailsModal" class="modal">
     <div class="modal-content">
-        <button class="btn-close" onclick="closeDetailsModal()">✕</button>
         <img id="detCover" src="" class="detail-cover">
-        <p id="detArtist" class="detail-artist"></p>
-        <h2 id="detAlbum" class="detail-album"></h2>
-        
-        <div class="detail-tags">
-            <span id="detStatus" class="tag" style="color:var(--accent);"></span>
-            <span id="detFormat" class="tag"></span>
-        </div>
-        
-        <div id="detTracks" class="detail-tracks"></div>
-        
-        <div class="modal-buttons">
-            <button style="background:var(--edit); flex:1;" onclick="openEditFromDetails()">Edytuj</button>
-            <button style="background:var(--danger); flex:1;" onclick="deleteFromDetails()">Usuń</button>
+        <h2 id="detAlbum" style="text-align:center; margin:0;"></h2>
+        <p id="detArtist" style="text-align:center; color:#888;"></p>
+        <div id="detNotes" class="detail-notes"></div>
+        <div id="detTracks" style="background:#000; padding:10px; border-radius:8px; font-size:12px; max-height:150px; overflow-y:auto; margin-bottom:15px;"></div>
+        <div style="display:flex; gap:10px;">
+            <button onclick="closeDetailsModal()" style="background:#444; flex:1">Zamknij</button>
+            <button onclick="openEditFromDetails()" style="background:var(--edit); flex:1">Edytuj</button>
         </div>
     </div>
 </div>
 
-<div id="editModal" class="modal" style="z-index: 10000;">
+<div id="editModal" class="modal">
     <div class="modal-content">
-        <h2 style="color: var(--edit); text-align:center; margin-top:0;">Edytuj Wpis</h2>
+        <h2>Edytuj album</h2>
         <input type="hidden" id="editIndex">
-        
-        <label>Wykonawca</label>
-        <input type="text" id="editArtist">
-        
-        <label>Album</label>
-        <input type="text" id="editAlbum">
-        
-        <div style="display:flex; gap:10px;">
-            <div style="flex:1;">
-                <label>Status</label>
-                <select id="editStatus">
-                    <option value="MAM">MAM</option>
-                    <option value="SZUKAM">SZUKAM</option>
-                </select>
-            </div>
-            <div style="flex:1;">
-                <label>Format</label>
-                <select id="editFormat">
-                    <option value="FLAC">FLAC</option>
-                    <option value="FLAC Hi-Res">FLAC Hi-Res</option>
-                    <option value="MP3">MP3</option>
-                    <option value="-">Brak / Szukam</option>
-                </select>
-            </div>
+        <input type="text" id="editArtist" placeholder="Wykonawca">
+        <input type="text" id="editAlbum" placeholder="Album" style="margin-top:10px">
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <select id="editStatus"><option value="MAM">MAM</option><option value="SZUKAM">SZUKAM</option></select>
+            <select id="editFormat"><option value="FLAC">FLAC</option><option value="FLAC Hi-Res">Hi-Res</option><option value="MP3">MP3</option><option value="-">-</option></select>
         </div>
-        
-        <label>Utwory</label>
-        <textarea id="editTracks"></textarea>
-        
-        <div class="modal-buttons">
-            <button class="btn-cancel" style="flex:1" onclick="closeEditModal()">Anuluj</button>
-            <button style="background:var(--edit); flex:1;" onclick="saveEdit()">Zapisz</button>
+        <textarea id="editNotes" placeholder="Twoje notatki (np. wydanie japońskie)" style="margin-top:10px"></textarea>
+        <textarea id="editTracks" placeholder="Tracklista" style="margin-top:10px; height:60px;"></textarea>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <button onclick="closeEditModal()" style="background:#444; flex:1">Anuluj</button>
+            <button onclick="deleteFromDetails()" style="background:var(--danger); flex:1">Usuń</button>
+            <button onclick="saveEdit()" style="flex:1">Zapisz</button>
         </div>
     </div>
 </div>
 
 <script>
-    // ==========================================
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz4JnEN2c4xOhJMKwQ8cXNdasCG3IjqXb02kFQeR-RVRcotmSfX_L5S27LcBCWBD3NimQ/exec';
-    const DISCOGS_TOKEN = 'seIzjqdJrlKLDTmydSZSALggtMsgAzGAOfNXzMzt';
-    // ==========================================
-
     let myCollection = [];
     let currentDetailsIndex = -1;
+    let GOOGLE_URL = localStorage.getItem('google_url') || '';
+    let DISCOGS_TOKEN = localStorage.getItem('discogs_token') || '';
 
-    // Normalizacja starych wpisów w locie
-    function normalizeData(data) {
-        return data.map((item, index) => {
-            let s = String(item.Status || '').toUpperCase().trim();
-            let f = String(item.Format || '').trim();
-            
-            // Jeśli Format jest pusty, odzyskaj go ze starego Statusu
-            if (!f) {
-                if (s === 'FLAC' || s === 'FLAC HI-RES' || s === 'MP3') { f = item.Status; s = 'MAM'; }
-                else if (s === 'SZUKAM') { f = '-'; }
-                else { f = 'FLAC'; s = 'MAM'; } // Domyślnie
-            }
-            return { ...item, Status: s, Format: f, originalIndex: index };
-        });
+    // Sugestia 1: Ustawienia
+    function openSettings() { 
+        document.getElementById('setGoogleURL').value = GOOGLE_URL;
+        document.getElementById('setDiscogsToken').value = DISCOGS_TOKEN;
+        document.getElementById('settingsModal').style.display = 'flex'; 
+    }
+    function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+    function saveSettings() {
+        localStorage.setItem('google_url', document.getElementById('setGoogleURL').value);
+        localStorage.setItem('discogs_token', document.getElementById('setDiscogsToken').value);
+        location.reload();
     }
 
+    // Sugestia 6: Export do CSV
+    function exportToCSV() {
+        let csv = "Wykonawca;Album;Status;Format;Notatki\n";
+        myCollection.forEach(i => {
+            csv += `${i.Wykonawca};${i.Album};${i.Status};${i.Format};${i.Notatki}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "kolekcja_walkman.csv";
+        link.click();
+    }
+
+    // Ładowanie i Baza
     async function loadFromSheets() {
+        if(!GOOGLE_URL) return;
         document.getElementById('loader').style.display = 'block';
         try {
-            const res = await fetch(GOOGLE_SCRIPT_URL, { redirect: 'follow' });
-            const rawData = await res.json();
-            myCollection = normalizeData(rawData);
-            updateCounters();
+            const res = await fetch(GOOGLE_URL, { redirect: 'follow' });
+            myCollection = await res.json();
             renderGrid();
-        } catch (e) { alert("Błąd połączenia z bazą."); }
+            updateCounters();
+        } catch (e) { console.error(e); }
         document.getElementById('loader').style.display = 'none';
     }
 
     function updateCounters() {
-        let mam = 0, szukam = 0;
-        myCollection.forEach(item => {
-            if(!item.Wykonawca) return;
-            if(item.Status === 'MAM') mam++;
-            else if(item.Status === 'SZUKAM') szukam++;
-        });
-        document.getElementById('countMam').innerText = mam;
-        document.getElementById('countSzukam').innerText = szukam;
-    }
-
-    async function searchDiscogs() {
-        const query = document.getElementById('query').value;
-        if (!query) return;
-        document.getElementById('loader').style.display = 'block';
-        try {
-            const res = await fetch(`https://api.discogs.com/database/search?q=${encodeURIComponent(query)}&type=release&token=${DISCOGS_TOKEN}&per_page=4`);
-            const data = await res.json();
-            document.getElementById('apiResults').innerHTML = data.results.map(r => `
-                <div class="result-card">
-                    <img src="${r.cover_image || 'https://via.placeholder.com/150'}">
-                    <p>${r.title}</p>
-                    <div style="display:flex; gap:5px; margin-bottom:5px;">
-                        <select id="sStat-${r.id}" style="flex:1; padding:6px;"><option value="MAM">MAM</option><option value="SZUKAM">SZUKAM</option></select>
-                        <select id="sForm-${r.id}" style="flex:1; padding:6px;"><option value="FLAC">FLAC</option><option value="FLAC Hi-Res">Hi-Res</option><option value="MP3">MP3</option></select>
-                    </div>
-                    <button onclick="addAlbum('${r.title.replace(/'/g,"\\'")}', '${r.cover_image}', '${r.id}')">DODAJ</button>
-                </div>
-            `).join('');
-        } catch(e) { alert("Błąd API Discogs"); }
-        document.getElementById('loader').style.display = 'none';
-    }
-
-    async function addAlbum(title, cover, id) {
-        const status = document.getElementById(`sStat-${id}`).value;
-        const format = document.getElementById(`sForm-${id}`).value;
-        document.getElementById('loader').style.display = 'block';
-        try {
-            const trackRes = await fetch(`https://api.discogs.com/releases/${id}?token=${DISCOGS_TOKEN}`);
-            const trackData = await trackRes.json();
-            const tracks = trackData.tracklist ? trackData.tracklist.map(t => t.title).join(', ') : "Brak";
-            const parts = title.split(' - ');
-            
-            const entry = { Wykonawca: parts[0] || "?", Album: parts[1] || "?", Status: status, Format: format, Okładka: cover, Utwory: tracks, DiscogsID: id };
-            await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(entry) });
-            
-            document.getElementById('apiResults').innerHTML = '';
-            document.getElementById('query').value = '';
-            setTimeout(loadFromSheets, 1500);
-        } catch(e) { alert("Błąd dodawania"); document.getElementById('loader').style.display = 'none'; }
+        let m = myCollection.filter(i => i.Status === 'MAM').length;
+        let s = myCollection.filter(i => i.Status === 'SZUKAM').length;
+        document.getElementById('countMam').innerText = m;
+        document.getElementById('countSzukam').innerText = s;
     }
 
     function renderGrid() {
         const container = document.getElementById('collectionGrid');
-        const qText = document.getElementById('localSearch').value.toLowerCase();
-        const qStat = document.getElementById('statusFilter').value;
-        const qForm = document.getElementById('formatFilter').value;
+        const q = document.getElementById('localSearch').value.toLowerCase();
+        const stat = document.getElementById('statusFilter').value;
+        
+        const filtered = myCollection.filter(i => {
+            if(!i.Wykonawca) return false;
+            return (i.Wykonawca.toLowerCase().includes(q) || i.Album.toLowerCase().includes(q)) && (stat === "ALL" || i.Status === stat);
+        }).sort((a,b) => a.Wykonawca.localeCompare(b.Wykonawca));
 
-        // Sortowanie alfabetyczne domyślne dla gridu (Wykonawca -> Album)
-        let filtered = myCollection.filter(item => {
-            if (!item.Wykonawca) return false;
-            const textMatch = item.Wykonawca.toLowerCase().includes(qText) || item.Album.toLowerCase().includes(qText);
-            const statMatch = qStat === "ALL" || item.Status === qStat;
-            const formMatch = qForm === "ALL" || String(item.Format).toUpperCase() === qForm;
-            return textMatch && statMatch && formMatch;
-        });
-
-        filtered.sort((a,b) => a.Wykonawca.localeCompare(b.Wykonawca) || a.Album.localeCompare(b.Album));
-
-        container.innerHTML = filtered.map(item => {
-            let badgeClass = "flac";
-            if(item.Status === 'SZUKAM') badgeClass = 'szukam';
-            else if(item.Format === 'FLAC Hi-Res') badgeClass = 'hires';
-            else if(item.Format === 'MP3') badgeClass = 'mp3';
-            
-            let badgeText = item.Status === 'SZUKAM' ? 'SZUKAM' : item.Format;
-
-            return `
-                <div class="grid-item" onclick="openDetailsModal(${item.originalIndex})">
-                    <img src="${item.Okładka || 'https://via.placeholder.com/150'}">
-                    <div class="format-badge ${badgeClass}">${badgeText}</div>
-                    <div class="grid-overlay">
-                        <div class="grid-title">${item.Wykonawca}</div>
-                        <div class="grid-subtitle">${item.Album}</div>
-                    </div>
-                </div>
-            `;
-        }).join('');
+        container.innerHTML = filtered.map((item, idx) => `
+            <div class="grid-item" onclick="openDetails(${myCollection.indexOf(item)})">
+                <img src="${item.Okładka}" loading="lazy"> <div class="format-badge">${item.Status === 'SZUKAM' ? 'SZUKAM' : item.Format}</div>
+                <div class="grid-overlay"><div class="grid-title">${item.Wykonawca}</div></div>
+            </div>
+        `).join('');
     }
 
-    // --- MODAL SZCZEGÓŁÓW ---
-    function openDetailsModal(index) {
-        currentDetailsIndex = index;
-        const item = myCollection[index];
-        document.getElementById('detCover').src = item.Okładka || 'https://via.placeholder.com/220';
-        document.getElementById('detArtist').innerText = item.Wykonawca;
-        document.getElementById('detAlbum').innerText = item.Album;
-        
-        const statEl = document.getElementById('detStatus');
-        statEl.innerText = item.Status;
-        statEl.style.color = item.Status === 'SZUKAM' ? '#f1c40f' : 'var(--accent)';
-        
-        document.getElementById('detFormat').innerText = item.Format;
-        document.getElementById('detTracks').innerHTML = (item.Utwory || '').split(',').map((t, i) => `<div style="padding:5px 0; border-bottom:1px solid #222;">${i+1}. ${t.trim()}</div>`).join('');
-        
+    // Discogs i Detale (z obsługą Notatek)
+    async function searchDiscogs() {
+        const q = document.getElementById('query').value;
+        const res = await fetch(`https://api.discogs.com/database/search?q=${q}&token=${DISCOGS_TOKEN}&per_page=4`);
+        const data = await res.json();
+        document.getElementById('apiResults').innerHTML = data.results.map(r => `
+            <div class="grid-item" onclick="addAlbum('${r.title.replace(/'/g,"\\'")}', '${r.cover_image}', '${r.id}')">
+                <img src="${r.cover_image}">
+                <div class="grid-overlay"><div class="grid-title">${r.title}</div></div>
+            </div>
+        `).join('');
+    }
+
+    async function addAlbum(title, cover, id) {
+        const status = prompt("Status (MAM/SZUKAM)", "MAM");
+        if(!status) return;
+        const format = status === "MAM" ? prompt("Format (FLAC/MP3/Hi-Res)", "FLAC") : "-";
+        const res = await fetch(`https://api.discogs.com/releases/${id}?token=${DISCOGS_TOKEN}`);
+        const d = await res.json();
+        const tracks = d.tracklist ? d.tracklist.map(t => t.title).join(', ') : "";
+        const parts = title.split(' - ');
+        const entry = { action: "ADD", Wykonawca: parts[0], Album: parts[1], Status: status, Format: format, Okładka: cover, Utwory: tracks, DiscogsID: id, Notatki: "" };
+        await fetch(GOOGLE_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(entry) });
+        setTimeout(loadFromSheets, 1500);
+    }
+
+    function openDetails(idx) {
+        currentDetailsIndex = idx;
+        const i = myCollection[idx];
+        document.getElementById('detCover').src = i.Okładka;
+        document.getElementById('detAlbum').innerText = i.Album;
+        document.getElementById('detArtist').innerText = i.Wykonawca;
+        document.getElementById('detNotes').innerText = i.Notatki || "Brak notatek";
+        document.getElementById('detTracks').innerText = i.Utwory || "Brak tracklisty";
         document.getElementById('detailsModal').style.display = 'flex';
     }
     function closeDetailsModal() { document.getElementById('detailsModal').style.display = 'none'; }
 
-    // --- MODAL EDYCJI ---
     function openEditFromDetails() {
-        closeDetailsModal();
-        const item = myCollection[currentDetailsIndex];
+        const i = myCollection[currentDetailsIndex];
         document.getElementById('editIndex').value = currentDetailsIndex;
-        document.getElementById('editArtist').value = item.Wykonawca;
-        document.getElementById('editAlbum').value = item.Album;
-        document.getElementById('editStatus').value = item.Status;
-        document.getElementById('editFormat').value = item.Format || 'FLAC';
-        document.getElementById('editTracks').value = item.Utwory;
+        document.getElementById('editArtist').value = i.Wykonawca;
+        document.getElementById('editAlbum').value = i.Album;
+        document.getElementById('editStatus').value = i.Status;
+        document.getElementById('editFormat').value = i.Format;
+        document.getElementById('editNotes').value = i.Notatki;
+        document.getElementById('editTracks').value = i.Utwory;
+        closeDetailsModal();
         document.getElementById('editModal').style.display = 'flex';
     }
     function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
 
     async function saveEdit() {
         const idx = document.getElementById('editIndex').value;
-        const oldItem = myCollection[idx];
+        const old = myCollection[idx];
         const payload = {
-            action: "EDIT", oldWykonawca: oldItem.Wykonawca, oldAlbum: oldItem.Album,
+            action: "EDIT", oldWykonawca: old.Wykonawca, oldAlbum: old.Album,
             Wykonawca: document.getElementById('editArtist').value, Album: document.getElementById('editAlbum').value,
             Status: document.getElementById('editStatus').value, Format: document.getElementById('editFormat').value,
-            Utwory: document.getElementById('editTracks').value
+            Notatki: document.getElementById('editNotes').value, Utwory: document.getElementById('editTracks').value
         };
         closeEditModal();
-        document.getElementById('loader').style.display = 'block';
-        try {
-            await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-            setTimeout(loadFromSheets, 1500); 
-        } catch(e) { alert("Błąd zapisu."); document.getElementById('loader').style.display = 'none'; }
+        await fetch(GOOGLE_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+        setTimeout(loadFromSheets, 1500);
     }
 
     async function deleteFromDetails() {
-        const item = myCollection[currentDetailsIndex];
-        if (!confirm(`Usunąć:\n${item.Wykonawca} - ${item.Album}?`)) return;
-        closeDetailsModal();
-        document.getElementById('loader').style.display = 'block';
-        try {
-            await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: "DELETE", Wykonawca: item.Wykonawca, Album: item.Album }) });
-            setTimeout(loadFromSheets, 1500); 
-        } catch(e) { alert("Błąd usuwania."); document.getElementById('loader').style.display = 'none'; }
+        const i = myCollection[document.getElementById('editIndex').value];
+        if(!confirm("Usunąć?")) return;
+        await fetch(GOOGLE_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action:"DELETE", Wykonawca:i.Wykonawca, Album:i.Album}) });
+        location.reload();
+    }
+
+    // Sugestia 5: Rejestracja Service Workera (Offline)
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
     }
 
     loadFromSheets();
