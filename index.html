@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
-    <title>Walkman Cloud V7 - Pro Formats</title>
+    <title>Walkman Cloud V8 - Edit System</title>
     <style>
-        :root { --accent: #1db954; --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --danger: #e74c3c; --hires: #9b59b6; }
+        :root { --accent: #1db954; --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --danger: #e74c3c; --hires: #9b59b6; --edit: #3498db; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
         .container { max-width: 1000px; margin: auto; }
         h1 { text-align: center; color: var(--accent); letter-spacing: 1px; }
         
         .panel { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
         .input-group { display: flex; gap: 10px; flex-wrap: wrap; }
-        input, button, select { padding: 12px; border-radius: 6px; border: 1px solid #333; background: #282828; color: white; outline: none; }
-        input:focus, select:focus { border-color: var(--accent); }
+        input, button, select, textarea { padding: 12px; border-radius: 6px; border: 1px solid #333; background: #282828; color: white; outline: none; }
+        input:focus, select:focus, textarea:focus { border-color: var(--accent); }
         button { background: var(--accent); color: black; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }
         button:hover { opacity: 0.9; transform: translateY(-1px); }
         
@@ -37,16 +37,29 @@
         .details-content { padding: 20px; display: flex; gap: 25px; border-left: 4px solid var(--accent); }
         .details-cover-big { width: 220px; height: 220px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
         
-        .tracklist { flex: 1; font-size: 14px; color: #bbb; max-height: 250px; overflow-y: auto; }
-        .btn-delete { background: var(--danger); color: white; margin-top: 15px; padding: 8px 15px; font-size: 12px; }
+        .tracklist { flex: 1; font-size: 14px; color: #bbb; max-height: 200px; overflow-y: auto; background: #111; padding: 10px; border-radius: 6px;}
         .loader { text-align: center; padding: 20px; display: none; color: var(--accent); font-weight: bold; }
         
-        /* Nowe statusy kolorystyczne */
+        /* Action Buttons */
+        .btn-delete { background: var(--danger); color: white; padding: 8px 15px; font-size: 12px; }
+        .btn-edit { background: var(--edit); color: white; padding: 8px 15px; font-size: 12px; }
+        .actions-bar { display: flex; gap: 10px; margin-top: 15px; }
+
+        /* Modal (Okienko Edycji) */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; border: 1px solid var(--edit); box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        .modal-content label { display: block; margin: 10px 0 5px; font-size: 12px; color: var(--accent); }
+        .modal-content input, .modal-content select, .modal-content textarea { width: 100%; box-sizing: border-box; }
+        .modal-content textarea { height: 100px; resize: vertical; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .btn-cancel { background: #555; color: white; }
+
+        /* Statusy */
         .status-flac { color: var(--accent); font-weight: bold; }
-        .status-flachires { color: var(--hires); font-weight: bold; text-shadow: 0 0 5px rgba(155, 89, 182, 0.4); }
+        .status-flachires { color: var(--hires); font-weight: bold; }
         .status-mp3 { color: #3498db; font-weight: bold; }
         .status-szukam { color: #f1c40f; font-weight: bold; }
-        .status-mam { color: var(--accent); font-weight: bold; opacity: 0.8; } /* Stare wpisy */
+        .status-mam { color: var(--accent); font-weight: bold; opacity: 0.8; }
         
         .sort-icon { font-size: 10px; margin-left: 5px; opacity: 0.5; }
     </style>
@@ -94,6 +107,33 @@
     </table>
 </div>
 
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h2 style="margin-top:0; color:var(--edit);">✏️ Edytuj Wpis</h2>
+        <input type="hidden" id="editIndex"> <label>Wykonawca</label>
+        <input type="text" id="editArtist">
+        
+        <label>Tytuł Albumu</label>
+        <input type="text" id="editAlbum">
+        
+        <label>Format / Status</label>
+        <select id="editStatus">
+            <option value="FLAC">FLAC</option>
+            <option value="FLAC Hi-Res">FLAC Hi-Res</option>
+            <option value="MP3">MP3</option>
+            <option value="SZUKAM">SZUKAM</option>
+        </select>
+        
+        <label>Tracklista (oddziel utwory przecinkiem)</label>
+        <textarea id="editTracks"></textarea>
+        
+        <div class="modal-buttons">
+            <button class="btn-cancel" onclick="closeEditModal()">Anuluj</button>
+            <button style="background:var(--edit); color:white;" onclick="saveEdit()">💾 Zapisz zmiany</button>
+        </div>
+    </div>
+</div>
+
 <script>
     // ==========================================
     // TUTAJ WKLEJ SWOJE DANE
@@ -113,18 +153,14 @@
             renderTable();
         } catch (e) { 
             console.error(e);
-            alert("Błąd połączenia z bazą Google Sheets.");
+            alert("Błąd połączenia z bazą.");
         }
         document.getElementById('loader').style.display = 'none';
     }
 
     function sortCollection(key) {
-        if (currentSort.key === key) {
-            currentSort.asc = !currentSort.asc;
-        } else {
-            currentSort.key = key;
-            currentSort.asc = true;
-        }
+        if (currentSort.key === key) currentSort.asc = !currentSort.asc;
+        else { currentSort.key = key; currentSort.asc = true; }
         
         myCollection.sort((a, b) => {
             let valA = (a[key] || "").toLowerCase();
@@ -136,12 +172,47 @@
         renderTable();
     }
 
-    async function deleteAlbum(artist, album) {
-        if (!confirm(`Czy na pewno usunąć: ${artist} - ${album}?`)) return;
+    // --- LOGIKA EDYCJI ---
+    function openEditModal(originalIndex) {
+        const item = myCollection[originalIndex];
         
+        document.getElementById('editIndex').value = originalIndex;
+        document.getElementById('editArtist').value = item.Wykonawca || '';
+        document.getElementById('editAlbum').value = item.Album || '';
+        
+        // Dopasowanie statusu do listy
+        let cleanStatus = String(item.Status).trim().toUpperCase();
+        if (cleanStatus === "MAM") cleanStatus = "FLAC";
+        const select = document.getElementById('editStatus');
+        if (Array.from(select.options).some(o => o.value.toUpperCase() === cleanStatus)) {
+            select.value = Array.from(select.options).find(o => o.value.toUpperCase() === cleanStatus).value;
+        } else { select.value = "FLAC"; }
+        
+        document.getElementById('editTracks').value = item.Utwory || '';
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    async function saveEdit() {
+        const index = document.getElementById('editIndex').value;
+        const oldItem = myCollection[index];
+        
+        const payload = {
+            action: "EDIT",
+            oldWykonawca: oldItem.Wykonawca,
+            oldAlbum: oldItem.Album,
+            Wykonawca: document.getElementById('editArtist').value,
+            Album: document.getElementById('editAlbum').value,
+            Status: document.getElementById('editStatus').value,
+            Utwory: document.getElementById('editTracks').value
+        };
+
+        closeEditModal();
         document.getElementById('loader').style.display = 'block';
-        const payload = { action: "DELETE", Wykonawca: artist, Album: album };
-        
+
         try {
             await fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
@@ -150,24 +221,36 @@
             });
             setTimeout(loadFromSheets, 1500); 
         } catch(e) {
-            alert("Nie udało się usunąć z bazy.");
+            alert("Nie udało się zaktualizować bazy.");
             document.getElementById('loader').style.display = 'none';
         }
     }
 
+    // --- LOGIKA USUWANIA ---
+    async function deleteAlbum(originalIndex) {
+        const item = myCollection[originalIndex];
+        if (!confirm(`Czy na pewno usunąć: ${item.Wykonawca} - ${item.Album}?`)) return;
+        
+        document.getElementById('loader').style.display = 'block';
+        const payload = { action: "DELETE", Wykonawca: item.Wykonawca, Album: item.Album };
+        
+        try {
+            await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            setTimeout(loadFromSheets, 1500); 
+        } catch(e) {
+            alert("Błąd usuwania.");
+            document.getElementById('loader').style.display = 'none';
+        }
+    }
+
+    // --- SZUKANIE W SIECI ---
     async function searchDiscogs() {
         const query = document.getElementById('query').value;
-        if (!query) return alert("Wpisz czego szukasz!");
-        if (!DISCOGS_TOKEN || DISCOGS_TOKEN.includes('TWOJ_TOKEN')) return alert("Brak tokena Discogs!");
-
+        if (!query) return;
         document.getElementById('loader').style.display = 'block';
-        document.getElementById('loader').innerText = "Szukanie w Discogs...";
-
         try {
             const res = await fetch(`https://api.discogs.com/database/search?q=${encodeURIComponent(query)}&type=release&token=${DISCOGS_TOKEN}&per_page=6`);
             const data = await res.json();
-            
-            // NOWOŚĆ: Generujemy okienka z wbudowaną listą wyboru statusu!
             document.getElementById('apiResults').innerHTML = data.results.map(r => `
                 <div class="result-card">
                     <img src="${r.cover_image || 'https://via.placeholder.com/150'}">
@@ -181,110 +264,77 @@
                     <button onclick="addAlbum('${r.title.replace(/'/g,"\\'")}', '${r.cover_image}', '${r.id}')">DODAJ +</button>
                 </div>
             `).join('');
-        } catch(e) {
-            alert("Błąd połączenia z Discogs API.");
-        }
-        
+        } catch(e) { alert("Błąd Discogs API"); }
         document.getElementById('loader').style.display = 'none';
-        document.getElementById('loader').innerText = "Synchronizacja z chmurą...";
     }
 
-    // Dodawanie albumu pobiera teraz wartość prosto z listy rozwijanej
     async function addAlbum(title, cover, id) {
-        // Zamiast prompt, pobieramy wybraną wartość z karty:
-        const statusElement = document.getElementById(`statusSelect-${id}`);
-        const status = statusElement ? statusElement.value : "FLAC";
-
+        const status = document.getElementById(`statusSelect-${id}`).value;
         document.getElementById('loader').style.display = 'block';
-        
         try {
             const trackRes = await fetch(`https://api.discogs.com/releases/${id}?token=${DISCOGS_TOKEN}`);
             const trackData = await trackRes.json();
-            const tracks = trackData.tracklist ? trackData.tracklist.map(t => t.title).join(', ') : "Brak danych";
+            const tracks = trackData.tracklist ? trackData.tracklist.map(t => t.title).join(', ') : "Brak";
             
             const parts = title.split(' - ');
-            const entry = { 
-                Wykonawca: parts[0] || "Nieznany", 
-                Album: parts[1] || "Nieznany", 
-                Status: status, 
-                Okładka: cover, 
-                Utwory: tracks, 
-                DiscogsID: id 
-            };
+            const entry = { Wykonawca: parts[0] || "Nieznany", Album: parts[1] || "Nieznany", Status: status, Okładka: cover, Utwory: tracks, DiscogsID: id };
 
-            await fetch(GOOGLE_SCRIPT_URL, { 
-                method: 'POST', 
-                mode: 'no-cors', 
-                body: JSON.stringify(entry) 
-            });
-            
+            await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(entry) });
             document.getElementById('apiResults').innerHTML = '';
             document.getElementById('query').value = '';
             setTimeout(loadFromSheets, 1500);
-
-        } catch(e) {
-            alert("Błąd podczas dodawania.");
-            document.getElementById('loader').style.display = 'none';
-        }
+        } catch(e) { alert("Błąd dodawania"); document.getElementById('loader').style.display = 'none'; }
     }
 
-    // Renderowanie i Nowe Filtrowanie
+    // --- RENDEROWANIE ---
     function renderTable() {
         const body = document.getElementById('collectionBody');
         const localSearch = document.getElementById('localSearch').value.toLowerCase();
         const statusFilter = document.getElementById('statusFilter').value;
 
-        const filteredCollection = myCollection.filter(item => {
+        // Dopisujemy oryginalny index zanim przefiltrujemy (ważne dla poprawnej edycji/usuwania)
+        const collectionWithIndex = myCollection.map((item, index) => ({...item, originalIndex: index}));
+
+        const filteredCollection = collectionWithIndex.filter(item => {
             if (!item.Wykonawca) return false;
-
-            const artistMatch = item.Wykonawca.toLowerCase().includes(localSearch);
-            const albumMatch = item.Album.toLowerCase().includes(localSearch);
-            const matchesText = artistMatch || albumMatch;
-
+            const matchesText = item.Wykonawca.toLowerCase().includes(localSearch) || item.Album.toLowerCase().includes(localSearch);
+            
             let matchesStatus = true;
             if (statusFilter !== "ALL") {
                 const itemStatus = String(item.Status).toUpperCase().trim();
-                
-                if (statusFilter === "FLAC") {
-                    // Pozwala na "FLAC" oraz stare wpisy "MAM"
-                    matchesStatus = itemStatus === "FLAC" || itemStatus === "MAM";
-                } else if (statusFilter === "FLAC HI-RES") {
-                    matchesStatus = itemStatus === "FLAC HI-RES";
-                } else if (statusFilter === "MP3") {
-                    matchesStatus = itemStatus === "MP3";
-                } else if (statusFilter === "SZUKAM") {
-                    matchesStatus = itemStatus === "SZUKAM";
-                }
+                if (statusFilter === "FLAC") matchesStatus = (itemStatus === "FLAC" || itemStatus === "MAM");
+                else if (statusFilter === "FLAC HI-RES") matchesStatus = itemStatus === "FLAC HI-RES";
+                else if (statusFilter === "MP3") matchesStatus = itemStatus === "MP3";
+                else if (statusFilter === "SZUKAM") matchesStatus = itemStatus === "SZUKAM";
             }
-
             return matchesText && matchesStatus;
         });
 
-        body.innerHTML = filteredCollection.map((item, i) => {
-            // Czyszczenie nazwy statusu żeby pasowała do klasy CSS (usuwa spacje i myślniki)
+        body.innerHTML = filteredCollection.map((item, visualIndex) => {
             const cleanStatus = String(item.Status || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-            const statusClass = `status-${cleanStatus}`;
-            
-            const tracks = (item.Utwory || '').split(',').map((t, idx) => `<div style="padding:4px 0; border-bottom:1px solid #333;">${idx+1}. ${t}</div>`).join('');
+            const tracks = (item.Utwory || '').split(',').map((t, idx) => `<div style="padding:4px 0; border-bottom:1px dotted #333;">${idx+1}. ${t.trim()}</div>`).join('');
             
             return `
-                <tr class="main-row" onclick="toggle(${i})">
+                <tr class="main-row" onclick="toggle(${visualIndex})">
                     <td><img src="${item.Okładka || 'https://via.placeholder.com/150'}" class="album-cover-mini"></td>
                     <td><strong>${item.Wykonawca}</strong></td>
                     <td>${item.Album}</td>
-                    <td class="${statusClass}">${item.Status}</td>
+                    <td class="status-${cleanStatus}">${item.Status}</td>
                 </tr>
-                <tr id="details-${i}" class="details-row">
+                <tr id="details-${visualIndex}" class="details-row">
                     <td colspan="4">
                         <div class="details-content">
                             <img src="${item.Okładka || 'https://via.placeholder.com/220'}" class="details-cover-big">
                             <div style="flex:1;">
-                                <h2 style="margin:0 0 15px 0; color:var(--accent)">${item.Album}</h2>
+                                <h2 style="margin:0 0 10px 0; color:var(--accent)">${item.Album}</h2>
                                 <div class="tracklist">
                                     <strong>Tracklista:</strong><br>
                                     ${tracks || "Brak listy utworów"}
                                 </div>
-                                <button class="btn-delete" onclick="deleteAlbum('${item.Wykonawca.replace(/'/g,"\\'")}', '${item.Album.replace(/'/g,"\\'")}')">USUŃ Z KOLEKCJI 🗑️</button>
+                                <div class="actions-bar">
+                                    <button class="btn-edit" onclick="openEditModal(${item.originalIndex})">EDYTUJ ✏️</button>
+                                    <button class="btn-delete" onclick="deleteAlbum(${item.originalIndex})">USUŃ Z KOLEKCJI 🗑️</button>
+                                </div>
                             </div>
                         </div>
                     </td>
@@ -293,8 +343,8 @@
         }).join('');
     }
 
-    function toggle(i) {
-        const el = document.getElementById(`details-${i}`);
+    function toggle(visualIndex) {
+        const el = document.getElementById(`details-${visualIndex}`);
         const isVisible = el.style.display === 'table-row';
         document.querySelectorAll('.details-row').forEach(r => r.style.display = 'none');
         el.style.display = isVisible ? 'none' : 'table-row';
