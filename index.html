@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="referrer" content="no-referrer">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -10,172 +10,127 @@
     <meta name="apple-mobile-web-app-title" content="Walkman">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Walkman_logo.svg/512px-Walkman_logo.svg.png">
     
-    <title>Walkman Cloud - Perfect Center</title>
+    <title>Walkman Cloud - Native iOS Edition</title>
     <style>
-        :root { --accent: #1db954; --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --danger: #e74c3c; --hires: #9b59b6; --edit: #3498db; }
+        :root { --accent: #1db954; --bg: #000000; --card: #121212; --text: #ffffff; --text-dim: #b3b3b3; --danger: #e74c3c; --hires: #9b59b6; --edit: #3498db; }
         
-        /* TWARDY RESET - Nikt nie wystaje poza krawędź! */
+        /* RESET & NATIVE FEEL */
         *, *::before, *::after { box-sizing: border-box; }
         
         html, body { 
             overflow-x: hidden; 
             width: 100%; 
-            max-width: 100vw; 
-            font-family: '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; 
             background: var(--bg); 
             color: var(--text); 
-            padding: 20px; 
+            padding: 0; 
             margin: 0; 
             -webkit-tap-highlight-color: transparent;
+            padding-bottom: env(safe-area-inset-bottom); /* Ochrona przed dolnym paskiem iPhone'a */
         }
 
-        .container { 
-            max-width: 1000px; 
-            margin: 0 auto; /* Idealne wyśrodkowanie */
-            width: 100%; 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+        .container { max-width: 800px; margin: 0 auto; width: 100%; padding: 15px; display: flex; flex-direction: column; gap: 15px; }
         
-        h1 { text-align: center; color: var(--accent); letter-spacing: 1px; font-size: 24px; width: 100%; }
+        h1 { text-align: center; color: var(--accent); font-size: 20px; margin: 10px 0; font-weight: 700; }
         
-        .panel { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; width: 100%; text-align: center; }
-        .panel h3 { margin-top: 0; font-size: 13px; margin-bottom: 15px; }
+        /* PANELE JAK W APLIKACJACH */
+        .panel { background: var(--card); padding: 15px; border-radius: 12px; width: 100%; }
+        .panel-title { font-size: 11px; text-transform: uppercase; color: var(--text-dim); margin-top: 0; margin-bottom: 12px; font-weight: 600; letter-spacing: 1px;}
         
-        .input-group { display: flex; gap: 10px; flex-wrap: wrap; width: 100%; justify-content: center; }
-        input, button, select, textarea { padding: 12px; border-radius: 8px; border: 1px solid #333; background: #282828; color: white; outline: none; -webkit-appearance: none; width: 100%; }
-        input:focus, select:focus, textarea:focus { border-color: var(--accent); }
-        button { background: var(--accent); color: black; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }
-        button:active { transform: scale(0.96); opacity: 0.8; }
+        .input-group { display: flex; gap: 8px; width: 100%; }
+        input, button, select, textarea { padding: 14px; border-radius: 8px; border: none; background: #282828; color: white; font-size: 16px; width: 100%; outline: none; -webkit-appearance: none; }
+        input::placeholder { color: #888; }
+        button { background: var(--accent); color: #000; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:active { transform: scale(0.95); opacity: 0.8; }
         
-        /* KAFELKI WYSZUKIWANIA */
-        #apiResults { display: flex; overflow-x: auto; gap: 15px; margin-bottom: 20px; padding-bottom: 10px; width: 100%; scrollbar-width: none; }
-        #apiResults::-webkit-scrollbar { display: none; }
-        
-        .result-card { min-width: 150px; width: 150px; background: var(--card); padding: 10px; border-radius: 10px; text-align: center; font-size: 11px; border: 1px solid #333; display: flex; flex-direction: column; justify-content: space-between; margin: 0 auto; }
-        .result-card img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 6px; margin-bottom: 8px; }
-        
-        .result-card p { 
-            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; 
-            overflow: hidden; text-overflow: ellipsis; white-space: normal;
-            height: 28px; margin: 5px 0; font-weight: bold; font-size: 11px;
-        }
-        .result-card select { width: 100%; padding: 8px; margin-bottom: 8px; font-size: 12px; background: #1a1a1a; text-align: center; }
-        
-        /* SZTYWNA TABELA */
-        table { 
-            table-layout: fixed; 
-            width: 100%; 
-            border-collapse: collapse; 
-            background: var(--card); 
-            border-radius: 12px; 
-            overflow: hidden; 
-            margin: 0 auto;
-        }
-        th { background: #282828; color: var(--accent); padding: 15px; text-align: left; cursor: pointer; user-select: none; border-bottom: 2px solid #333; }
-        td { padding: 12px; border-bottom: 1px solid #282828; word-wrap: break-word; overflow-wrap: break-word; }
-        
-        th:nth-child(1), td:nth-child(1) { width: 70px; text-align: center; }
-        th:nth-child(3), td:nth-child(3) { width: 100px; text-align: center; }
-        
-        .main-row { cursor: pointer; transition: background 0.2s; }
-        .main-row:active { background: #252525; }
-        .album-cover-mini { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
-        
-        .details-row { display: none; background: #151515; }
-        .details-content { padding: 20px; display: flex; gap: 20px; border-left: 4px solid var(--accent); justify-content: center; }
-        .details-cover-big { width: 200px; height: 200px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
-        
-        .tracklist { flex: 1; font-size: 13px; color: #bbb; max-height: 250px; overflow-y: auto; background: #111; padding: 12px; border-radius: 8px; }
-        .loader { text-align: center; padding: 20px; display: none; color: var(--accent); font-weight: bold; width: 100%; }
-        
-        .btn-delete { background: var(--danger); color: white; padding: 10px; font-size: 13px; flex: 1; border-radius: 8px; }
-        .btn-edit { background: var(--edit); color: white; padding: 10px; font-size: 13px; flex: 1; border-radius: 8px; }
-        .actions-bar { display: flex; gap: 10px; margin-top: 15px; width: 100%; }
+        /* GRID WYSZUKIWANIA DISCOGS */
+        #apiResults { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; }
+        .result-card { background: #1a1a1a; padding: 10px; border-radius: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .result-card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 6px; }
+        .result-card p { font-size: 12px; font-weight: 600; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .result-card select { padding: 8px; font-size: 13px; background: #282828; }
+        .result-card button { padding: 10px; font-size: 13px; }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: var(--card); padding: 20px; border-radius: 14px; width: 92%; max-width: 400px; border: 1px solid #333; max-height: 85vh; overflow-y: auto; }
-        .modal-content label { display: block; margin: 12px 0 6px; font-size: 12px; color: var(--accent); font-weight: bold; text-align: left; }
-        .modal-content textarea { height: 80px; resize: none; }
-        .modal-buttons { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; }
-        .btn-cancel { background: #444; color: white; flex: 1; }
-
-        .status-flac { color: var(--accent); font-weight: bold; }
-        .status-flachires { color: var(--hires); font-weight: bold; }
-        .status-mp3 { color: #3498db; font-weight: bold; }
-        .status-szukam { color: #f1c40f; font-weight: bold; }
-        .status-mam { color: var(--accent); font-weight: bold; opacity: 0.8; }
+        /* PASEK SORTOWANIA */
+        .sort-bar { display: flex; justify-content: space-between; padding: 10px 5px; font-size: 12px; color: var(--text-dim); font-weight: 600; border-bottom: 1px solid #222; margin-bottom: 5px; }
+        .sort-btn { cursor: pointer; display: flex; align-items: center; gap: 4px; }
         
-        .sort-icon { font-size: 10px; margin-left: 5px; opacity: 0.5; }
+        /* NOWA LISTA (ZASTĘPUJE TABELĘ) */
+        .list-container { display: flex; flex-direction: column; width: 100%; background: var(--card); border-radius: 12px; overflow: hidden; }
+        
+        .list-row { display: flex; align-items: center; padding: 12px 15px; gap: 12px; border-bottom: 1px solid #1a1a1a; cursor: pointer; transition: background 0.2s; }
+        .list-row:active { background: #282828; }
+        
+        .row-cover { width: 48px; height: 48px; border-radius: 4px; object-fit: cover; flex-shrink: 0; background: #282828; }
+        
+        /* Ucinanie tekstu kluczem do braku scrolla poziomego! */
+        .row-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+        .row-artist { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+        .row-album { font-size: 13px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .row-status { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 12px; background: #282828; flex-shrink: 0; }
 
-        /* ======================================================= */
-        /* SPECJALNY UKŁAD DLA iOS I EKRANÓW MOBILNYCH             */
-        /* ======================================================= */
-        @media (min-width: 601px) {
-            .input-group > input { flex: 2; }
-            .input-group > select, .input-group > button { flex: 1; }
+        /* ROZWINIĘCIE DETALI */
+        .details-container { display: none; background: #0a0a0a; padding: 20px; flex-direction: column; align-items: center; border-bottom: 1px solid #1a1a1a; }
+        .details-cover-large { width: 180px; height: 180px; border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); margin-bottom: 15px; }
+        .details-album-title { font-size: 20px; font-weight: 800; text-align: center; margin: 0 0 15px 0; color: var(--accent); }
+        .details-tracks { width: 100%; background: #121212; border-radius: 8px; padding: 12px; font-size: 13px; color: #ccc; max-height: 250px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .actions-bar { display: flex; gap: 10px; width: 100%; margin-top: 15px; }
+        .btn-edit { background: var(--edit); color: white; border-radius: 8px; }
+        .btn-delete { background: var(--danger); color: white; border-radius: 8px; }
+
+        /* MODAL EDYCJI */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { background: var(--card); padding: 20px; border-radius: 16px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .modal-content h2 { margin: 0 0 15px 0; color: var(--edit); font-size: 18px; text-align: center; }
+        .modal-content label { display: block; font-size: 11px; color: var(--text-dim); margin: 10px 0 5px 5px; text-transform: uppercase; letter-spacing: 1px;}
+        .modal-content input, .modal-content select, .modal-content textarea { background: #000; border: 1px solid #333; }
+        .modal-content textarea { height: 80px; resize: none; font-family: inherit; }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-cancel { background: #333; color: white; }
+
+        /* KOLORY STATUSÓW */
+        .status-flac { color: #1db954; }
+        .status-flachires { color: #9b59b6; }
+        .status-mp3 { color: #3498db; }
+        .status-szukam { color: #f1c40f; }
+        .status-mam { color: #1db954; }
+        
+        .loader { text-align: center; padding: 20px; font-weight: bold; color: var(--accent); display: none; }
+
+        @media (min-width: 600px) {
+            .input-group { flex-direction: row; }
+            #localSearch { flex: 2; }
+            #statusFilter { flex: 1; }
+            #query { flex: 2; }
+            .input-group button { flex: 1; }
         }
-
-        @media (max-width: 600px) {
-            body { padding: 15px 10px; } 
-            
-            .container { padding: 0; }
-            .panel { padding: 15px; margin-bottom: 15px; border-radius: 10px; }
-            
-            .input-group { flex-direction: column; align-items: center; }
-            .input-group > input, .input-group > select, .input-group > button { 
-                font-size: 16px; /* Wymuszone 16px wyłącza zoomowanie Safari */
-            }
-            
-            /* SIATKA WYSZUKIWANIA - perfekcyjnie na środku */
-            #apiResults {
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 12px;
-                overflow: hidden;
-                width: 100%;
-                justify-content: center;
-            }
-            .result-card { width: 100%; }
-            
-            /* TABELA - wyśrodkowanie tekstu */
-            th { padding: 12px 5px; font-size: 11px; text-align: center; }
-            td { padding: 12px 5px; font-size: 13px; text-align: center; }
-            
-            th:nth-child(1), td:nth-child(1) { width: 55px; }
-            th:nth-child(3), td:nth-child(3) { width: 85px; }
-            
-            .album-cover-mini { width: 45px; height: 45px; border-radius: 4px; margin: 0 auto; display: block; }
-            
-            .details-content { flex-direction: column; align-items: center; padding: 15px 10px; text-align: center; border-left: none; border-top: 4px solid var(--accent); }
-            .details-cover-big { width: 160px; height: 160px; margin-bottom: 10px; }
-            .tracklist { width: 100%; text-align: left; max-height: 200px; }
-            .modal-content { padding: 15px; }
+        @media (max-width: 599px) {
+            .input-group { flex-direction: column; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🎧 Walkman Cloud</h1>
+    <h1>Walkman Cloud</h1>
 
     <div class="panel">
-        <h3 style="color: #888;">🌐 DODAJ Z BAZY DISCOGS</h3>
+        <h3 class="panel-title">🌐 Dodaj z Discogs</h3>
         <div class="input-group">
-            <input type="text" id="query" placeholder="Artysta lub Album..." onkeypress="if(event.key === 'Enter') searchDiscogs()">
-            <button onclick="searchDiscogs()">Szukaj 🔍</button>
+            <input type="text" id="query" placeholder="Artysta lub album..." onkeypress="if(event.key === 'Enter') searchDiscogs()">
+            <button onclick="searchDiscogs()">Szukaj</button>
         </div>
     </div>
     
     <div id="apiResults"></div>
-    <div id="loader" class="loader">Ładowanie...</div>
+    <div id="loader" class="loader">Wczytywanie...</div>
 
-    <div class="panel" style="border: 1px solid var(--accent); background: #161616;">
-        <h3 style="color: var(--accent);">📁 TWOJA KOLEKCJA</h3>
-        <div class="input-group">
-            <input type="text" id="localSearch" placeholder="Szukaj w swoich albumach..." onkeyup="renderTable()">
-            <select id="statusFilter" onchange="renderTable()">
+    <div class="panel" style="padding-bottom: 5px;">
+        <h3 class="panel-title" style="color: var(--accent);">📁 Twoja Kolekcja</h3>
+        <div class="input-group" style="margin-bottom: 15px;">
+            <input type="text" id="localSearch" placeholder="Filtruj listę..." onkeyup="renderList()">
+            <select id="statusFilter" onchange="renderList()">
                 <option value="ALL">Wszystkie formaty</option>
                 <option value="FLAC">FLAC</option>
                 <option value="FLAC HI-RES">FLAC Hi-Res</option>
@@ -183,35 +138,30 @@
                 <option value="SZUKAM">SZUKAM</option>
             </select>
         </div>
+        
+        <div class="sort-bar">
+            <div class="sort-btn" onclick="sortCollection('Wykonawca')">Wykonawca ↕</div>
+            <div class="sort-btn" onclick="sortCollection('Album')">Album ↕</div>
+            <div class="sort-btn" onclick="sortCollection('Status')">Format ↕</div>
+        </div>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Okładka</th>
-                <th>
-                    <div onclick="sortCollection('Wykonawca')" style="cursor:pointer; margin-bottom:4px; font-size: 12px;">Wykonawca <span class="sort-icon">↕</span></div>
-                    <div onclick="sortCollection('Album')" style="cursor:pointer; font-size:10px; opacity:0.7;">Album <span class="sort-icon">↕</span></div>
-                </th>
-                <th onclick="sortCollection('Status')" style="font-size: 11px;">Format <span class="sort-icon">↕</span></th>
-            </tr>
-        </thead>
-        <tbody id="collectionBody"></tbody>
-    </table>
+    <div class="list-container" id="collectionBody">
+        </div>
 </div>
 
 <div id="editModal" class="modal">
     <div class="modal-content">
-        <h2 style="margin-top:0; color:var(--edit); font-size: 18px; text-align: center;">✏️ Edytuj Wpis</h2>
+        <h2>Edytuj Wpis</h2>
         <input type="hidden" id="editIndex">
         
         <label>Wykonawca</label>
         <input type="text" id="editArtist">
         
-        <label>Tytuł Albumu</label>
+        <label>Album</label>
         <input type="text" id="editAlbum">
         
-        <label>Format / Status</label>
+        <label>Format</label>
         <select id="editStatus">
             <option value="FLAC">FLAC</option>
             <option value="FLAC Hi-Res">FLAC Hi-Res</option>
@@ -219,12 +169,12 @@
             <option value="SZUKAM">SZUKAM</option>
         </select>
         
-        <label>Tracklista (oddziel przecinkiem)</label>
+        <label>Utwory</label>
         <textarea id="editTracks"></textarea>
         
         <div class="modal-buttons">
-            <button class="btn-cancel" onclick="closeEditModal()">Anuluj</button>
-            <button style="background:var(--edit); color:white; flex: 1;" onclick="saveEdit()">Zapisz</button>
+            <button class="btn-cancel" style="flex:1" onclick="closeEditModal()">Anuluj</button>
+            <button style="flex:1" onclick="saveEdit()">Zapisz</button>
         </div>
     </div>
 </div>
@@ -245,10 +195,8 @@
         try {
             const res = await fetch(GOOGLE_SCRIPT_URL, { redirect: 'follow' });
             myCollection = await res.json();
-            renderTable();
-        } catch (e) { 
-            alert("Błąd połączenia z bazą Google.");
-        }
+            renderList();
+        } catch (e) { alert("Błąd połączenia z bazą."); }
         document.getElementById('loader').style.display = 'none';
     }
 
@@ -263,7 +211,7 @@
             if (valA > valB) return currentSort.asc ? 1 : -1;
             return 0;
         });
-        renderTable();
+        renderList();
     }
 
     function openEditModal(originalIndex) {
@@ -293,10 +241,8 @@
             Wykonawca: document.getElementById('editArtist').value, Album: document.getElementById('editAlbum').value,
             Status: document.getElementById('editStatus').value, Utwory: document.getElementById('editTracks').value
         };
-
         closeEditModal();
         document.getElementById('loader').style.display = 'block';
-
         try {
             await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
             setTimeout(loadFromSheets, 1500); 
@@ -305,7 +251,7 @@
 
     async function deleteAlbum(originalIndex) {
         const item = myCollection[originalIndex];
-        if (!confirm(`Usunąć: ${item.Wykonawca} - ${item.Album}?`)) return;
+        if (!confirm(`Usunąć:\n${item.Wykonawca} - ${item.Album}?`)) return;
         document.getElementById('loader').style.display = 'block';
         const payload = { action: "DELETE", Wykonawca: item.Wykonawca, Album: item.Album };
         try {
@@ -356,68 +302,59 @@
         } catch(e) { alert("Błąd dodawania"); document.getElementById('loader').style.display = 'none'; }
     }
 
-    function renderTable() {
-        const body = document.getElementById('collectionBody');
+    function renderList() {
+        const container = document.getElementById('collectionBody');
         const localSearch = document.getElementById('localSearch').value.toLowerCase();
         const statusFilter = document.getElementById('statusFilter').value;
 
         const collectionWithIndex = myCollection.map((item, index) => ({...item, originalIndex: index}));
 
-        const filteredCollection = collectionWithIndex.filter(item => {
+        const filtered = collectionWithIndex.filter(item => {
             if (!item.Wykonawca) return false;
-            const matchesText = item.Wykonawca.toLowerCase().includes(localSearch) || item.Album.toLowerCase().includes(localSearch);
+            const textMatch = item.Wykonawca.toLowerCase().includes(localSearch) || item.Album.toLowerCase().includes(localSearch);
             
-            let matchesStatus = true;
+            let statusMatch = true;
             if (statusFilter !== "ALL") {
-                const itemStatus = String(item.Status).toUpperCase().trim();
-                if (statusFilter === "FLAC") matchesStatus = (itemStatus === "FLAC" || itemStatus === "MAM");
-                else if (statusFilter === "FLAC HI-RES") matchesStatus = itemStatus === "FLAC HI-RES";
-                else if (statusFilter === "MP3") matchesStatus = itemStatus === "MP3";
-                else if (statusFilter === "SZUKAM") matchesStatus = itemStatus === "SZUKAM";
+                const s = String(item.Status).toUpperCase().trim();
+                if (statusFilter === "FLAC") statusMatch = (s === "FLAC" || s === "MAM");
+                else if (statusFilter === "FLAC HI-RES") statusMatch = s === "FLAC HI-RES";
+                else if (statusFilter === "MP3") statusMatch = s === "MP3";
+                else if (statusFilter === "SZUKAM") statusMatch = s === "SZUKAM";
             }
-            return matchesText && matchesStatus;
+            return textMatch && statusMatch;
         });
 
-        body.innerHTML = filteredCollection.map((item, visualIndex) => {
+        container.innerHTML = filtered.map((item, vIndex) => {
             const cleanStatus = String(item.Status || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-            const tracks = (item.Utwory || '').split(',').map((t, idx) => `<div style="padding:5px 0; border-bottom:1px solid #222; text-align:left;">${idx+1}. ${t.trim()}</div>`).join('');
+            const tracks = (item.Utwory || '').split(',').map((t, idx) => `<div style="padding:6px 0; border-bottom:1px solid #222;">${idx+1}. ${t.trim()}</div>`).join('');
             
             return `
-                <tr class="main-row" onclick="toggle(${visualIndex})">
-                    <td><img src="${item.Okładka || 'https://via.placeholder.com/150'}" class="album-cover-mini"></td>
-                    <td>
-                        <strong style="display:block; margin-bottom:3px;">${item.Wykonawca}</strong>
-                        <span style="font-size:12px; color:#aaa; line-height: 1.2;">${item.Album}</span>
-                    </td>
-                    <td class="status-${cleanStatus}" style="font-size: 12px; text-align:center;">${item.Status}</td>
-                </tr>
-                <tr id="details-${visualIndex}" class="details-row">
-                    <td colspan="3">
-                        <div class="details-content">
-                            <img src="${item.Okładka || 'https://via.placeholder.com/220'}" class="details-cover-big">
-                            <div style="flex:1; width: 100%;">
-                                <h2 style="margin:0 0 10px 0; color:var(--accent); font-size:18px;">${item.Album}</h2>
-                                <div class="tracklist">
-                                    <strong style="display:block; margin-bottom: 5px; color:#fff; text-align:left;">Utwory:</strong>
-                                    ${tracks || "<div style='text-align:left;'>Brak listy utworów</div>"}
-                                </div>
-                                <div class="actions-bar">
-                                    <button class="btn-edit" onclick="openEditModal(${item.originalIndex}); event.stopPropagation();">EDYTUJ ✏️</button>
-                                    <button class="btn-delete" onclick="deleteAlbum(${item.originalIndex}); event.stopPropagation();">USUŃ 🗑️</button>
-                                </div>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
+                <div class="list-row" onclick="toggleDetails(${vIndex})">
+                    <img src="${item.Okładka || 'https://via.placeholder.com/150'}" class="row-cover">
+                    <div class="row-info">
+                        <div class="row-artist">${item.Wykonawca}</div>
+                        <div class="row-album">${item.Album}</div>
+                    </div>
+                    <div class="row-status status-${cleanStatus}">${item.Status}</div>
+                </div>
+                <div class="details-container" id="details-${vIndex}">
+                    <img src="${item.Okładka || 'https://via.placeholder.com/220'}" class="details-cover-large">
+                    <h2 class="details-album-title">${item.Album}</h2>
+                    <div class="details-tracks">${tracks || "Brak utworów"}</div>
+                    <div class="actions-bar">
+                        <button class="btn-edit" style="flex:1" onclick="openEditModal(${item.originalIndex}); event.stopPropagation();">Edytuj</button>
+                        <button class="btn-delete" style="flex:1" onclick="deleteAlbum(${item.originalIndex}); event.stopPropagation();">Usuń</button>
+                    </div>
+                </div>
             `;
         }).join('');
     }
 
-    function toggle(visualIndex) {
-        const el = document.getElementById(`details-${visualIndex}`);
-        const isVisible = el.style.display === 'table-row';
-        document.querySelectorAll('.details-row').forEach(r => r.style.display = 'none');
-        el.style.display = isVisible ? 'none' : 'table-row';
+    function toggleDetails(vIndex) {
+        const el = document.getElementById(`details-${vIndex}`);
+        const isVisible = el.style.display === 'flex';
+        document.querySelectorAll('.details-container').forEach(r => r.style.display = 'none');
+        el.style.display = isVisible ? 'none' : 'flex';
     }
 
     loadFromSheets();
