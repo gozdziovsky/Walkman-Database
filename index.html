@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
-    <title>Walkman Cloud V6 - Search & Filter</title>
+    <title>Walkman Cloud V7 - Pro Formats</title>
     <style>
-        :root { --accent: #1db954; --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --danger: #e74c3c; }
+        :root { --accent: #1db954; --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --danger: #e74c3c; --hires: #9b59b6; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
         .container { max-width: 1000px; margin: auto; }
         h1 { text-align: center; color: var(--accent); letter-spacing: 1px; }
@@ -18,10 +18,11 @@
         button { background: var(--accent); color: black; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }
         button:hover { opacity: 0.9; transform: translateY(-1px); }
         
-        #apiResults { display: flex; overflow-x: auto; gap: 10px; margin-bottom: 20px; padding-bottom: 10px; scrollbar-width: thin; }
-        .result-card { min-width: 140px; background: var(--card); padding: 10px; border-radius: 8px; text-align: center; font-size: 11px; border: 1px solid #333; }
-        .result-card img { width: 100%; height: 130px; object-fit: cover; border-radius: 4px; margin-bottom: 5px; }
-        .result-card p { height: 30px; overflow: hidden; margin: 5px 0; }
+        #apiResults { display: flex; overflow-x: auto; gap: 15px; margin-bottom: 20px; padding-bottom: 15px; scrollbar-width: thin; }
+        .result-card { min-width: 160px; background: var(--card); padding: 12px; border-radius: 8px; text-align: center; font-size: 11px; border: 1px solid #333; display: flex; flex-direction: column; justify-content: space-between; }
+        .result-card img { width: 100%; height: 140px; object-fit: cover; border-radius: 4px; margin-bottom: 8px; }
+        .result-card p { height: 32px; overflow: hidden; margin: 5px 0; font-weight: bold; }
+        .result-card select { width: 100%; padding: 8px; margin-bottom: 8px; font-size: 12px; background: #1a1a1a; }
         
         table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; }
         th { background: #282828; color: var(--accent); padding: 15px; text-align: left; cursor: pointer; user-select: none; border-bottom: 2px solid #333; }
@@ -40,9 +41,13 @@
         .btn-delete { background: var(--danger); color: white; margin-top: 15px; padding: 8px 15px; font-size: 12px; }
         .loader { text-align: center; padding: 20px; display: none; color: var(--accent); font-weight: bold; }
         
-        .status-mam { color: var(--accent); font-weight: bold; }
-        .status-szukam { color: #f1c40f; font-weight: bold; }
+        /* Nowe statusy kolorystyczne */
+        .status-flac { color: var(--accent); font-weight: bold; }
+        .status-flachires { color: var(--hires); font-weight: bold; text-shadow: 0 0 5px rgba(155, 89, 182, 0.4); }
         .status-mp3 { color: #3498db; font-weight: bold; }
+        .status-szukam { color: #f1c40f; font-weight: bold; }
+        .status-mam { color: var(--accent); font-weight: bold; opacity: 0.8; } /* Stare wpisy */
+        
         .sort-icon { font-size: 10px; margin-left: 5px; opacity: 0.5; }
     </style>
 </head>
@@ -58,18 +63,20 @@
             <button onclick="searchDiscogs()">Szukaj w sieci 🔍</button>
         </div>
     </div>
+    
     <div id="apiResults"></div>
     <div id="loader" class="loader">Synchronizacja z chmurą...</div>
 
     <div class="panel" style="border: 1px solid var(--accent); background: #1a1a1a;">
         <h3 style="margin-top: 0; font-size: 14px; color: var(--accent);">📁 Przeszukuj swoją kolekcję</h3>
         <div class="input-group">
-            <input type="text" id="localSearch" placeholder="Szukaj w swoich albumach (np. nazwa lub wykonawca)..." style="flex:2" onkeyup="renderTable()">
+            <input type="text" id="localSearch" placeholder="Szukaj wykonawcy lub albumu..." style="flex:2" onkeyup="renderTable()">
             <select id="statusFilter" style="flex:1" onchange="renderTable()">
-                <option value="ALL">Wszystkie statusy</option>
-                <option value="MAM">Tylko MAM (FLAC)</option>
-                <option value="SZUKAM">Tylko SZUKAM</option>
+                <option value="ALL">Wszystkie formaty/statusy</option>
+                <option value="FLAC">Tylko FLAC</option>
+                <option value="FLAC HI-RES">Tylko FLAC Hi-Res</option>
                 <option value="MP3">Tylko MP3</option>
+                <option value="SZUKAM">Tylko SZUKAM</option>
             </select>
         </div>
     </div>
@@ -80,7 +87,7 @@
                 <th>Okładka</th>
                 <th onclick="sortCollection('Wykonawca')">Wykonawca <span class="sort-icon">↕</span></th>
                 <th onclick="sortCollection('Album')">Album <span class="sort-icon">↕</span></th>
-                <th onclick="sortCollection('Status')">Status <span class="sort-icon">↕</span></th>
+                <th onclick="sortCollection('Status')">Status / Format <span class="sort-icon">↕</span></th>
             </tr>
         </thead>
         <tbody id="collectionBody"></tbody>
@@ -98,7 +105,6 @@
     let myCollection = [];
     let currentSort = { key: '', asc: true };
 
-    // ŁADOWANIE Z ARKUSZA
     async function loadFromSheets() {
         document.getElementById('loader').style.display = 'block';
         try {
@@ -112,7 +118,6 @@
         document.getElementById('loader').style.display = 'none';
     }
 
-    // SORTOWANIE (działa w tle na pełnej bazie, potem renderuje widok)
     function sortCollection(key) {
         if (currentSort.key === key) {
             currentSort.asc = !currentSort.asc;
@@ -131,7 +136,6 @@
         renderTable();
     }
 
-    // USUWANIE
     async function deleteAlbum(artist, album) {
         if (!confirm(`Czy na pewno usunąć: ${artist} - ${album}?`)) return;
         
@@ -151,7 +155,6 @@
         }
     }
 
-    // SZUKANIE W DISCOGS
     async function searchDiscogs() {
         const query = document.getElementById('query').value;
         if (!query) return alert("Wpisz czego szukasz!");
@@ -164,10 +167,17 @@
             const res = await fetch(`https://api.discogs.com/database/search?q=${encodeURIComponent(query)}&type=release&token=${DISCOGS_TOKEN}&per_page=6`);
             const data = await res.json();
             
+            // NOWOŚĆ: Generujemy okienka z wbudowaną listą wyboru statusu!
             document.getElementById('apiResults').innerHTML = data.results.map(r => `
                 <div class="result-card">
                     <img src="${r.cover_image || 'https://via.placeholder.com/150'}">
-                    <p>${r.title}</p>
+                    <p title="${r.title}">${r.title}</p>
+                    <select id="statusSelect-${r.id}">
+                        <option value="FLAC">FLAC</option>
+                        <option value="FLAC Hi-Res">FLAC Hi-Res</option>
+                        <option value="MP3">MP3</option>
+                        <option value="SZUKAM">SZUKAM</option>
+                    </select>
                     <button onclick="addAlbum('${r.title.replace(/'/g,"\\'")}', '${r.cover_image}', '${r.id}')">DODAJ +</button>
                 </div>
             `).join('');
@@ -179,10 +189,11 @@
         document.getElementById('loader').innerText = "Synchronizacja z chmurą...";
     }
 
-    // DODAWANIE DO BAZY
+    // Dodawanie albumu pobiera teraz wartość prosto z listy rozwijanej
     async function addAlbum(title, cover, id) {
-        const status = prompt("Wybierz status (np. MAM, SZUKAM, MAM mp3):", "MAM");
-        if(!status) return;
+        // Zamiast prompt, pobieramy wybraną wartość z karty:
+        const statusElement = document.getElementById(`statusSelect-${id}`);
+        const status = statusElement ? statusElement.value : "FLAC";
 
         document.getElementById('loader').style.display = 'block';
         
@@ -217,41 +228,43 @@
         }
     }
 
-    // RENDEROWANIE (TERAZ Z FILTROWANIEM!)
+    // Renderowanie i Nowe Filtrowanie
     function renderTable() {
         const body = document.getElementById('collectionBody');
         const localSearch = document.getElementById('localSearch').value.toLowerCase();
         const statusFilter = document.getElementById('statusFilter').value;
 
-        // 1. Filtrujemy kolekcję na żywo
         const filteredCollection = myCollection.filter(item => {
-            if (!item.Wykonawca) return false; // Pomiń puste wiersze
+            if (!item.Wykonawca) return false;
 
-            // Filtrowanie tekstu (szuka w nazwie wykonawcy i albumu)
             const artistMatch = item.Wykonawca.toLowerCase().includes(localSearch);
             const albumMatch = item.Album.toLowerCase().includes(localSearch);
             const matchesText = artistMatch || albumMatch;
 
-            // Filtrowanie po statusie
             let matchesStatus = true;
             if (statusFilter !== "ALL") {
-                const itemStatus = String(item.Status).toUpperCase();
-                if (statusFilter === "MAM") {
-                    // Chcemy tylko "MAM" bez dopisków mp3
-                    matchesStatus = itemStatus === "MAM" || itemStatus.includes("FLAC");
-                } else if (statusFilter === "SZUKAM") {
-                    matchesStatus = itemStatus.includes("SZUKAM");
+                const itemStatus = String(item.Status).toUpperCase().trim();
+                
+                if (statusFilter === "FLAC") {
+                    // Pozwala na "FLAC" oraz stare wpisy "MAM"
+                    matchesStatus = itemStatus === "FLAC" || itemStatus === "MAM";
+                } else if (statusFilter === "FLAC HI-RES") {
+                    matchesStatus = itemStatus === "FLAC HI-RES";
                 } else if (statusFilter === "MP3") {
-                    matchesStatus = itemStatus.includes("MP3");
+                    matchesStatus = itemStatus === "MP3";
+                } else if (statusFilter === "SZUKAM") {
+                    matchesStatus = itemStatus === "SZUKAM";
                 }
             }
 
             return matchesText && matchesStatus;
         });
 
-        // 2. Wyświetlamy tylko to, co przeszło przez filtry
         body.innerHTML = filteredCollection.map((item, i) => {
-            const statusClass = `status-${String(item.Status || '').toLowerCase().replace(/[()]/g, '').trim()}`;
+            // Czyszczenie nazwy statusu żeby pasowała do klasy CSS (usuwa spacje i myślniki)
+            const cleanStatus = String(item.Status || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const statusClass = `status-${cleanStatus}`;
+            
             const tracks = (item.Utwory || '').split(',').map((t, idx) => `<div style="padding:4px 0; border-bottom:1px solid #333;">${idx+1}. ${t}</div>`).join('');
             
             return `
@@ -280,7 +293,6 @@
         }).join('');
     }
 
-    // POKAZYWANIE/UKRYWANIE SZCZEGÓŁÓW
     function toggle(i) {
         const el = document.getElementById(`details-${i}`);
         const isVisible = el.style.display === 'table-row';
@@ -288,7 +300,6 @@
         el.style.display = isVisible ? 'none' : 'table-row';
     }
 
-    // START
     loadFromSheets();
 </script>
 </body>
