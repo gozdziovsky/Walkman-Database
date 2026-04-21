@@ -10,57 +10,90 @@
     <meta name="apple-mobile-web-app-title" content="Walkman">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Walkman_logo.svg/512px-Walkman_logo.svg.png">
     
-    <title>Walkman Cloud V9 - Mobile Edition</title>
+    <title>Walkman Cloud - iOS Native Edition</title>
     <style>
         :root { --accent: #1db954; --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --danger: #e74c3c; --hires: #9b59b6; --edit: #3498db; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
-        .container { max-width: 1000px; margin: auto; }
-        h1 { text-align: center; color: var(--accent); letter-spacing: 1px; }
         
-        .panel { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
-        .input-group { display: flex; gap: 10px; flex-wrap: wrap; }
-        input, button, select, textarea { padding: 12px; border-radius: 6px; border: 1px solid #333; background: #282828; color: white; outline: none; }
+        /* ZABEZPIECZENIE PRZED ROZCIĄGANIEM NA BOKI */
+        html, body { 
+            overflow-x: hidden; 
+            width: 100%; 
+            max-width: 100vw; 
+            font-family: '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            padding: 20px; 
+            margin: 0; 
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent; /* Usuwa niebieski błysk przy klikaniu na iOS */
+        }
+        
+        *, *:before, *:after { box-sizing: inherit; }
+
+        .container { max-width: 1000px; margin: auto; width: 100%; }
+        h1 { text-align: center; color: var(--accent); letter-spacing: 1px; font-size: 24px; }
+        
+        .panel { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; width: 100%; }
+        .input-group { display: flex; gap: 10px; flex-wrap: wrap; width: 100%; }
+        input, button, select, textarea { padding: 12px; border-radius: 8px; border: 1px solid #333; background: #282828; color: white; outline: none; -webkit-appearance: none; }
         input:focus, select:focus, textarea:focus { border-color: var(--accent); }
         button { background: var(--accent); color: black; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }
-        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        button:active { transform: scale(0.96); opacity: 0.8; }
         
-        #apiResults { display: flex; overflow-x: auto; gap: 15px; margin-bottom: 20px; padding-bottom: 15px; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
-        .result-card { min-width: 160px; background: var(--card); padding: 12px; border-radius: 8px; text-align: center; font-size: 11px; border: 1px solid #333; display: flex; flex-direction: column; justify-content: space-between; }
-        .result-card img { width: 100%; height: 140px; object-fit: cover; border-radius: 4px; margin-bottom: 8px; }
-        .result-card p { height: 32px; overflow: hidden; margin: 5px 0; font-weight: bold; }
-        .result-card select { width: 100%; padding: 8px; margin-bottom: 8px; font-size: 12px; background: #1a1a1a; }
+        /* KAFELKI WYSZUKIWANIA */
+        #apiResults { display: flex; overflow-x: auto; gap: 15px; margin-bottom: 20px; padding-bottom: 10px; scrollbar-width: none; }
+        #apiResults::-webkit-scrollbar { display: none; }
         
-        table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; }
+        .result-card { min-width: 150px; width: 150px; background: var(--card); padding: 10px; border-radius: 10px; text-align: center; font-size: 11px; border: 1px solid #333; display: flex; flex-direction: column; justify-content: space-between; }
+        .result-card img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 6px; margin-bottom: 8px; }
+        
+        /* Ucinanie i łamanie długiego tekstu na kafelku */
+        .result-card p { 
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; 
+            overflow: hidden; text-overflow: ellipsis; white-space: normal;
+            height: 28px; margin: 5px 0; font-weight: bold; font-size: 11px;
+        }
+        .result-card select { width: 100%; padding: 8px; margin-bottom: 8px; font-size: 12px; background: #1a1a1a; text-align: center; }
+        
+        /* SZTYWNA TABELA */
+        table { 
+            table-layout: fixed; /* KLUCZOWE - zapobiega rozjeżdżaniu */
+            width: 100%; 
+            border-collapse: collapse; 
+            background: var(--card); 
+            border-radius: 12px; 
+            overflow: hidden; 
+        }
         th { background: #282828; color: var(--accent); padding: 15px; text-align: left; cursor: pointer; user-select: none; border-bottom: 2px solid #333; }
-        th:hover { background: #333; }
-        td { padding: 12px; border-bottom: 1px solid #282828; }
+        td { padding: 12px; border-bottom: 1px solid #282828; word-wrap: break-word; overflow-wrap: break-word; }
+        
+        /* Sztywne szerokości kolumn */
+        th:nth-child(1), td:nth-child(1) { width: 70px; text-align: center; }
+        th:nth-child(3), td:nth-child(3) { width: 100px; text-align: center; }
         
         .main-row { cursor: pointer; transition: background 0.2s; }
-        .main-row:hover { background: #252525; }
-        .album-cover-mini { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .main-row:active { background: #252525; }
+        .album-cover-mini { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         
-        .details-row { display: none; background: #181818; }
-        .details-content { padding: 20px; display: flex; gap: 25px; border-left: 4px solid var(--accent); }
-        .details-cover-big { width: 220px; height: 220px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
+        .details-row { display: none; background: #151515; }
+        .details-content { padding: 20px; display: flex; gap: 20px; border-left: 4px solid var(--accent); }
+        .details-cover-big { width: 200px; height: 200px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
         
-        .tracklist { flex: 1; font-size: 14px; color: #bbb; max-height: 200px; overflow-y: auto; background: #111; padding: 10px; border-radius: 6px; -webkit-overflow-scrolling: touch;}
+        .tracklist { flex: 1; font-size: 13px; color: #bbb; max-height: 250px; overflow-y: auto; background: #111; padding: 12px; border-radius: 8px; }
         .loader { text-align: center; padding: 20px; display: none; color: var(--accent); font-weight: bold; }
         
-        /* Action Buttons */
-        .btn-delete { background: var(--danger); color: white; padding: 8px 15px; font-size: 12px; flex: 1; }
-        .btn-edit { background: var(--edit); color: white; padding: 8px 15px; font-size: 12px; flex: 1; }
+        .btn-delete { background: var(--danger); color: white; padding: 10px; font-size: 13px; flex: 1; border-radius: 8px; }
+        .btn-edit { background: var(--edit); color: white; padding: 10px; font-size: 13px; flex: 1; border-radius: 8px; }
         .actions-bar { display: flex; gap: 10px; margin-top: 15px; width: 100%; }
 
-        /* Modal (Okienko Edycji) */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 12px; width: 90%; max-width: 500px; border: 1px solid var(--edit); box-shadow: 0 10px 30px rgba(0,0,0,0.8); max-height: 90vh; overflow-y: auto; }
-        .modal-content label { display: block; margin: 10px 0 5px; font-size: 12px; color: var(--accent); }
-        .modal-content input, .modal-content select, .modal-content textarea { width: 100%; box-sizing: border-box; }
-        .modal-content textarea { height: 100px; resize: vertical; }
-        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-        .btn-cancel { background: #555; color: white; }
+        .modal-content { background: var(--card); padding: 20px; border-radius: 14px; width: 92%; max-width: 400px; border: 1px solid #333; max-height: 85vh; overflow-y: auto; }
+        .modal-content label { display: block; margin: 12px 0 6px; font-size: 12px; color: var(--accent); font-weight: bold; }
+        .modal-content input, .modal-content select, .modal-content textarea { width: 100%; }
+        .modal-content textarea { height: 80px; resize: none; }
+        .modal-buttons { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; }
+        .btn-cancel { background: #444; color: white; flex: 1; }
 
-        /* Statusy */
         .status-flac { color: var(--accent); font-weight: bold; }
         .status-flachires { color: var(--hires); font-weight: bold; }
         .status-mp3 { color: #3498db; font-weight: bold; }
@@ -70,54 +103,75 @@
         .sort-icon { font-size: 10px; margin-left: 5px; opacity: 0.5; }
 
         /* ======================================================= */
-        /* RESPONSIVE DESIGN (IPHONE / MOBILE)                     */
+        /* SPECJALNY UKŁAD DLA iOS I EKRANÓW MOBILNYCH             */
         /* ======================================================= */
         @media (max-width: 600px) {
-            body { padding: 10px; }
-            .panel { padding: 15px; margin-bottom: 15px; }
+            body { padding: 10px 5px; } /* Mniejsze marginesy boczne */
+            .panel { padding: 15px; margin-bottom: 15px; border-radius: 10px; }
             
-            /* Panele pionowo */
             .input-group { flex-direction: column; }
-            .input-group > input, .input-group > select, .input-group > button { width: 100%; box-sizing: border-box; font-size: 16px; /* 16px zapobiega zoomowi w iOS Safari */ }
+            .input-group > input, .input-group > select, .input-group > button { 
+                width: 100%; 
+                font-size: 16px; /* Wymuszone 16px wyłącza zoomowanie Safari */
+            }
             
-            /* Kompresja tabeli */
-            th { padding: 10px 8px; font-size: 12px; }
-            td { padding: 10px 8px; font-size: 13px; }
-            .album-cover-mini { width: 45px; height: 45px; }
+            /* KAFELKI WYSZUKIWANIA -> SIATKA (GRID) */
+            #apiResults {
+                display: grid;
+                grid-template-columns: 1fr 1fr; /* Równo 2 kolumny na środku */
+                gap: 10px;
+                overflow-x: hidden;
+            }
+            .result-card {
+                width: 100%;
+                min-width: unset;
+                box-sizing: border-box;
+            }
             
-            /* Rozwijane szczegóły - układ pionowy na telefonie */
-            .details-content { flex-direction: column; align-items: center; text-align: center; gap: 15px; padding: 15px; }
-            .details-cover-big { width: 180px; height: 180px; }
-            .tracklist { width: 100%; text-align: left; box-sizing: border-box; }
+            /* KOMPRESJA TABELI DLA EKRANU iPHONE'A */
+            th { padding: 12px 5px; font-size: 11px; }
+            td { padding: 12px 5px; font-size: 13px; }
+            
+            /* Jeszcze mocniejsze zwężenie skrajnych kolumn na telefonie */
+            th:nth-child(1), td:nth-child(1) { width: 55px; }
+            th:nth-child(3), td:nth-child(3) { width: 85px; }
+            
+            .album-cover-mini { width: 45px; height: 45px; border-radius: 4px; }
+            
+            /* Pionowy układ detali */
+            .details-content { flex-direction: column; align-items: center; padding: 15px 10px; text-align: center; }
+            .details-cover-big { width: 160px; height: 160px; margin-bottom: 10px; }
+            .tracklist { width: 100%; text-align: left; max-height: 200px; }
+            .modal-content { padding: 15px; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🎧 Walkman Collection Cloud</h1>
+    <h1>🎧 Walkman Cloud</h1>
 
     <div class="panel">
-        <h3 style="margin-top: 0; font-size: 14px; color: #888;">🌐 Dodaj nowy album z bazy Discogs</h3>
+        <h3 style="margin-top: 0; font-size: 13px; color: #888;">🌐 DODAJ Z BAZY DISCOGS</h3>
         <div class="input-group">
-            <input type="text" id="query" placeholder="Czego szukasz? (np. Daft Punk)..." onkeypress="if(event.key === 'Enter') searchDiscogs()">
-            <button onclick="searchDiscogs()">Szukaj w sieci 🔍</button>
+            <input type="text" id="query" placeholder="Artysta lub Album..." onkeypress="if(event.key === 'Enter') searchDiscogs()">
+            <button onclick="searchDiscogs()">Szukaj 🔍</button>
         </div>
     </div>
     
     <div id="apiResults"></div>
-    <div id="loader" class="loader">Synchronizacja z chmurą...</div>
+    <div id="loader" class="loader">Ładowanie...</div>
 
-    <div class="panel" style="border: 1px solid var(--accent); background: #1a1a1a;">
-        <h3 style="margin-top: 0; font-size: 14px; color: var(--accent);">📁 Przeszukuj swoją kolekcję</h3>
+    <div class="panel" style="border: 1px solid var(--accent); background: #161616;">
+        <h3 style="margin-top: 0; font-size: 13px; color: var(--accent);">📁 TWOJA KOLEKCJA</h3>
         <div class="input-group">
-            <input type="text" id="localSearch" placeholder="Szukaj wykonawcy lub albumu..." onkeyup="renderTable()">
+            <input type="text" id="localSearch" placeholder="Szukaj w swoich albumach..." onkeyup="renderTable()">
             <select id="statusFilter" onchange="renderTable()">
-                <option value="ALL">Wszystkie formaty/statusy</option>
-                <option value="FLAC">Tylko FLAC</option>
-                <option value="FLAC HI-RES">Tylko FLAC Hi-Res</option>
-                <option value="MP3">Tylko MP3</option>
-                <option value="SZUKAM">Tylko SZUKAM</option>
+                <option value="ALL">Wszystkie formaty</option>
+                <option value="FLAC">FLAC</option>
+                <option value="FLAC HI-RES">FLAC Hi-Res</option>
+                <option value="MP3">MP3</option>
+                <option value="SZUKAM">SZUKAM</option>
             </select>
         </div>
     </div>
@@ -127,10 +181,10 @@
             <tr>
                 <th>Okładka</th>
                 <th>
-                    <div onclick="sortCollection('Wykonawca')" style="cursor:pointer; margin-bottom:4px;">Wykonawca <span class="sort-icon">↕</span></div>
-                    <div onclick="sortCollection('Album')" style="cursor:pointer; font-size:11px; opacity:0.7;">Album <span class="sort-icon">↕</span></div>
+                    <div onclick="sortCollection('Wykonawca')" style="cursor:pointer; margin-bottom:4px; font-size: 12px;">Wykonawca <span class="sort-icon">↕</span></div>
+                    <div onclick="sortCollection('Album')" style="cursor:pointer; font-size:10px; opacity:0.7;">Album <span class="sort-icon">↕</span></div>
                 </th>
-                <th onclick="sortCollection('Status')">Format <span class="sort-icon">↕</span></th>
+                <th onclick="sortCollection('Status')" style="font-size: 11px;">Format <span class="sort-icon">↕</span></th>
             </tr>
         </thead>
         <tbody id="collectionBody"></tbody>
@@ -139,7 +193,7 @@
 
 <div id="editModal" class="modal">
     <div class="modal-content">
-        <h2 style="margin-top:0; color:var(--edit);">✏️ Edytuj Wpis</h2>
+        <h2 style="margin-top:0; color:var(--edit); font-size: 18px; text-align: center;">✏️ Edytuj Wpis</h2>
         <input type="hidden" id="editIndex">
         
         <label>Wykonawca</label>
@@ -156,12 +210,12 @@
             <option value="SZUKAM">SZUKAM</option>
         </select>
         
-        <label>Tracklista (oddziel utwory przecinkiem)</label>
+        <label>Tracklista (oddziel przecinkiem)</label>
         <textarea id="editTracks"></textarea>
         
         <div class="modal-buttons">
             <button class="btn-cancel" onclick="closeEditModal()">Anuluj</button>
-            <button style="background:var(--edit); color:white;" onclick="saveEdit()">💾 Zapisz</button>
+            <button style="background:var(--edit); color:white; flex: 1;" onclick="saveEdit()">Zapisz</button>
         </div>
     </div>
 </div>
@@ -184,8 +238,7 @@
             myCollection = await res.json();
             renderTable();
         } catch (e) { 
-            console.error(e);
-            alert("Błąd połączenia z bazą Google Sheets.");
+            alert("Błąd połączenia z bazą Google.");
         }
         document.getElementById('loader').style.display = 'none';
     }
@@ -221,9 +274,7 @@
         document.getElementById('editModal').style.display = 'flex';
     }
 
-    function closeEditModal() {
-        document.getElementById('editModal').style.display = 'none';
-    }
+    function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
 
     async function saveEdit() {
         const index = document.getElementById('editIndex').value;
@@ -240,12 +291,12 @@
         try {
             await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
             setTimeout(loadFromSheets, 1500); 
-        } catch(e) { alert("Nie udało się zaktualizować bazy."); document.getElementById('loader').style.display = 'none'; }
+        } catch(e) { alert("Błąd zapisu."); document.getElementById('loader').style.display = 'none'; }
     }
 
     async function deleteAlbum(originalIndex) {
         const item = myCollection[originalIndex];
-        if (!confirm(`Czy na pewno usunąć: ${item.Wykonawca} - ${item.Album}?`)) return;
+        if (!confirm(`Usunąć: ${item.Wykonawca} - ${item.Album}?`)) return;
         document.getElementById('loader').style.display = 'block';
         const payload = { action: "DELETE", Wykonawca: item.Wykonawca, Album: item.Album };
         try {
@@ -264,17 +315,17 @@
             document.getElementById('apiResults').innerHTML = data.results.map(r => `
                 <div class="result-card">
                     <img src="${r.cover_image || 'https://via.placeholder.com/150'}">
-                    <p title="${r.title}">${r.title}</p>
+                    <p>${r.title}</p>
                     <select id="statusSelect-${r.id}">
                         <option value="FLAC">FLAC</option>
                         <option value="FLAC Hi-Res">FLAC Hi-Res</option>
                         <option value="MP3">MP3</option>
                         <option value="SZUKAM">SZUKAM</option>
                     </select>
-                    <button onclick="addAlbum('${r.title.replace(/'/g,"\\'")}', '${r.cover_image}', '${r.id}')">DODAJ +</button>
+                    <button onclick="addAlbum('${r.title.replace(/'/g,"\\'")}', '${r.cover_image}', '${r.id}')">DODAJ</button>
                 </div>
             `).join('');
-        } catch(e) { alert("Błąd połączenia z Discogs API"); }
+        } catch(e) { alert("Błąd API Discogs"); }
         document.getElementById('loader').style.display = 'none';
     }
 
@@ -320,26 +371,25 @@
 
         body.innerHTML = filteredCollection.map((item, visualIndex) => {
             const cleanStatus = String(item.Status || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-            const tracks = (item.Utwory || '').split(',').map((t, idx) => `<div style="padding:4px 0; border-bottom:1px dotted #333;">${idx+1}. ${t.trim()}</div>`).join('');
+            const tracks = (item.Utwory || '').split(',').map((t, idx) => `<div style="padding:5px 0; border-bottom:1px solid #222;">${idx+1}. ${t.trim()}</div>`).join('');
             
-            // POŁĄCZONA KOLUMNA: Wykonawca na górze, Album pod spodem (z mniejszą czcionką)
             return `
                 <tr class="main-row" onclick="toggle(${visualIndex})">
                     <td><img src="${item.Okładka || 'https://via.placeholder.com/150'}" class="album-cover-mini"></td>
                     <td>
-                        <strong style="display:block; margin-bottom:2px;">${item.Wykonawca}</strong>
-                        <span style="font-size:11px; color:#aaa; line-height: 1.2;">${item.Album}</span>
+                        <strong style="display:block; margin-bottom:3px;">${item.Wykonawca}</strong>
+                        <span style="font-size:12px; color:#aaa; line-height: 1.2;">${item.Album}</span>
                     </td>
-                    <td class="status-${cleanStatus}" style="font-size: 13px;">${item.Status}</td>
+                    <td class="status-${cleanStatus}" style="font-size: 12px; text-align:center;">${item.Status}</td>
                 </tr>
                 <tr id="details-${visualIndex}" class="details-row">
                     <td colspan="3">
                         <div class="details-content">
                             <img src="${item.Okładka || 'https://via.placeholder.com/220'}" class="details-cover-big">
                             <div style="flex:1; width: 100%;">
-                                <h2 style="margin:0 0 10px 0; color:var(--accent); text-align: center;">${item.Album}</h2>
+                                <h2 style="margin:0 0 10px 0; color:var(--accent); font-size:18px;">${item.Album}</h2>
                                 <div class="tracklist">
-                                    <strong style="display:block; margin-bottom: 5px;">Tracklista:</strong>
+                                    <strong style="display:block; margin-bottom: 5px; color:#fff;">Utwory:</strong>
                                     ${tracks || "Brak listy utworów"}
                                 </div>
                                 <div class="actions-bar">
