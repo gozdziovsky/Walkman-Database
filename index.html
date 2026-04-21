@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
-    <title>Walkman Cloud V5 - Final Edition</title>
+    <title>Walkman Cloud V6 - Search & Filter</title>
     <style>
         :root { --accent: #1db954; --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --danger: #e74c3c; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
@@ -13,8 +13,8 @@
         
         .panel { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
         .input-group { display: flex; gap: 10px; flex-wrap: wrap; }
-        input, button { padding: 12px; border-radius: 6px; border: 1px solid #333; background: #282828; color: white; outline: none; }
-        input:focus { border-color: var(--accent); }
+        input, button, select { padding: 12px; border-radius: 6px; border: 1px solid #333; background: #282828; color: white; outline: none; }
+        input:focus, select:focus { border-color: var(--accent); }
         button { background: var(--accent); color: black; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }
         button:hover { opacity: 0.9; transform: translateY(-1px); }
         
@@ -52,14 +52,27 @@
     <h1>🎧 Walkman Collection Cloud</h1>
 
     <div class="panel">
+        <h3 style="margin-top: 0; font-size: 14px; color: #888;">🌐 Dodaj nowy album z bazy Discogs</h3>
         <div class="input-group">
-            <input type="text" id="query" placeholder="Szukaj wykonawcy lub albumu (np. Dire Straits)..." style="flex:1" onkeypress="if(event.key === 'Enter') searchDiscogs()">
-            <button onclick="searchDiscogs()">Szukaj w Discogs 🔍</button>
+            <input type="text" id="query" placeholder="Czego szukasz? (np. Daft Punk)..." style="flex:1" onkeypress="if(event.key === 'Enter') searchDiscogs()">
+            <button onclick="searchDiscogs()">Szukaj w sieci 🔍</button>
         </div>
     </div>
-
     <div id="apiResults"></div>
     <div id="loader" class="loader">Synchronizacja z chmurą...</div>
+
+    <div class="panel" style="border: 1px solid var(--accent); background: #1a1a1a;">
+        <h3 style="margin-top: 0; font-size: 14px; color: var(--accent);">📁 Przeszukuj swoją kolekcję</h3>
+        <div class="input-group">
+            <input type="text" id="localSearch" placeholder="Szukaj w swoich albumach (np. nazwa lub wykonawca)..." style="flex:2" onkeyup="renderTable()">
+            <select id="statusFilter" style="flex:1" onchange="renderTable()">
+                <option value="ALL">Wszystkie statusy</option>
+                <option value="MAM">Tylko MAM (FLAC)</option>
+                <option value="SZUKAM">Tylko SZUKAM</option>
+                <option value="MP3">Tylko MP3</option>
+            </select>
+        </div>
+    </div>
 
     <table>
         <thead>
@@ -99,7 +112,7 @@
         document.getElementById('loader').style.display = 'none';
     }
 
-    // SORTOWANIE
+    // SORTOWANIE (działa w tle na pełnej bazie, potem renderuje widok)
     function sortCollection(key) {
         if (currentSort.key === key) {
             currentSort.asc = !currentSort.asc;
@@ -131,7 +144,7 @@
                 mode: 'no-cors',
                 body: JSON.stringify(payload)
             });
-            setTimeout(loadFromSheets, 1500); // Odśwież po usunięciu
+            setTimeout(loadFromSheets, 1500); 
         } catch(e) {
             alert("Nie udało się usunąć z bazy.");
             document.getElementById('loader').style.display = 'none';
@@ -142,7 +155,7 @@
     async function searchDiscogs() {
         const query = document.getElementById('query').value;
         if (!query) return alert("Wpisz czego szukasz!");
-        if (!DISCOGS_TOKEN || DISCOGS_TOKEN.includes('TWOJ_TOKEN')) return alert("Musisz najpierw uzupełnić klucz DISCOGS_TOKEN w kodzie!");
+        if (!DISCOGS_TOKEN || DISCOGS_TOKEN.includes('TWOJ_TOKEN')) return alert("Brak tokena Discogs!");
 
         document.getElementById('loader').style.display = 'block';
         document.getElementById('loader').innerText = "Szukanie w Discogs...";
@@ -174,7 +187,6 @@
         document.getElementById('loader').style.display = 'block';
         
         try {
-            // Pobieranie tracklisty
             const trackRes = await fetch(`https://api.discogs.com/releases/${id}?token=${DISCOGS_TOKEN}`);
             const trackData = await trackRes.json();
             const tracks = trackData.tracklist ? trackData.tracklist.map(t => t.title).join(', ') : "Brak danych";
@@ -195,7 +207,6 @@
                 body: JSON.stringify(entry) 
             });
             
-            // Czyszczenie wyników szukania i odświeżanie
             document.getElementById('apiResults').innerHTML = '';
             document.getElementById('query').value = '';
             setTimeout(loadFromSheets, 1500);
@@ -206,12 +217,40 @@
         }
     }
 
-    // RENDEROWANIE INTERFEJSU
+    // RENDEROWANIE (TERAZ Z FILTROWANIEM!)
     function renderTable() {
         const body = document.getElementById('collectionBody');
-        body.innerHTML = myCollection.map((item, i) => {
-            if(!item.Wykonawca) return ''; // Pomiń puste
-            
+        const localSearch = document.getElementById('localSearch').value.toLowerCase();
+        const statusFilter = document.getElementById('statusFilter').value;
+
+        // 1. Filtrujemy kolekcję na żywo
+        const filteredCollection = myCollection.filter(item => {
+            if (!item.Wykonawca) return false; // Pomiń puste wiersze
+
+            // Filtrowanie tekstu (szuka w nazwie wykonawcy i albumu)
+            const artistMatch = item.Wykonawca.toLowerCase().includes(localSearch);
+            const albumMatch = item.Album.toLowerCase().includes(localSearch);
+            const matchesText = artistMatch || albumMatch;
+
+            // Filtrowanie po statusie
+            let matchesStatus = true;
+            if (statusFilter !== "ALL") {
+                const itemStatus = String(item.Status).toUpperCase();
+                if (statusFilter === "MAM") {
+                    // Chcemy tylko "MAM" bez dopisków mp3
+                    matchesStatus = itemStatus === "MAM" || itemStatus.includes("FLAC");
+                } else if (statusFilter === "SZUKAM") {
+                    matchesStatus = itemStatus.includes("SZUKAM");
+                } else if (statusFilter === "MP3") {
+                    matchesStatus = itemStatus.includes("MP3");
+                }
+            }
+
+            return matchesText && matchesStatus;
+        });
+
+        // 2. Wyświetlamy tylko to, co przeszło przez filtry
+        body.innerHTML = filteredCollection.map((item, i) => {
             const statusClass = `status-${String(item.Status || '').toLowerCase().replace(/[()]/g, '').trim()}`;
             const tracks = (item.Utwory || '').split(',').map((t, idx) => `<div style="padding:4px 0; border-bottom:1px solid #333;">${idx+1}. ${t}</div>`).join('');
             
